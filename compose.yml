@@ -1,0 +1,6 @@
+services:
+  app:
+    image: monashfit/fit3143
+    command: tail -F anything
+    volumes:
+      - .:/home/student/project

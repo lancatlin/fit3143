@@ -1,0 +1,5 @@
+__MACOSX
+a.out
+*.o
+.~lock*
+*.zip
