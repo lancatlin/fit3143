@@ -24,4 +24,6 @@ IntSlice find_primes(int n) {
   return primes;
 }
 
-int main(int argc, char *argv[]) { return run_task(argc, argv, find_primes); }
+int main(int argc, char *argv[]) {
+  return run_task(argc, argv, find_primes, "task1");
+}

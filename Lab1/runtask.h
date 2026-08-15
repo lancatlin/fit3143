@@ -2,4 +2,4 @@
 
 #include "slice.h"
 
-int run_task(int argc, char *argv[], IntSlice (*func)(int));
+int run_task(int argc, char *argv[], IntSlice (*func)(int), char *label);

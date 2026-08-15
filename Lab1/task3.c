@@ -11,13 +11,12 @@ IntSlice find_primes(int n) {
   if (n < 2)
     return primes;
 
-  int sum = 0;
 #pragma omp parallel
   {
     IntSlice lprimes = make_slice(0, 10);
-#pragma omp for reduction(+ : sum)
+#pragma omp for schedule(dynamic, 100) ordered
     for (int i = 2; i < n; i++) {
-      printf("Thread %d: i: %d\n", omp_get_thread_num(), i);
+      // printf("Thread %d: i: %d\n", omp_get_thread_num(), i);
 
       int sqroot = floor(sqrt(i));
       bool is_prime = true;
@@ -28,27 +27,16 @@ IntSlice find_primes(int n) {
         }
       }
       if (is_prime) {
-        append_slice(&lprimes, i);
-        sum += 1;
-      }
-    }
-
-#pragma omp single
-    {
-      printf("Thread %d: Resize\n", omp_get_thread_num());
-      primes = make_slice(0, sum);
-    }
-
-#pragma omp critical
-    {
-      printf("Thread %d: Copy memory\n", omp_get_thread_num());
-      for (int i = 0; i < lprimes.len; i++) {
-        printf("Thread %d: Copy %i\n", omp_get_thread_num(), lprimes.arr[i]);
-        append_slice(&primes, lprimes.arr[i]);
+#pragma omp ordered
+        {
+          append_slice(&primes, i);
+        }
       }
     }
   }
   return primes;
 }
 
-int main(int argc, char *argv[]) { return run_task(argc, argv, find_primes); }
+int main(int argc, char *argv[]) {
+  return run_task(argc, argv, find_primes, "task3");
+}

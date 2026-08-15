@@ -1,10 +1,11 @@
 #include "slice.h"
+#include <bits/time.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
 
-int run_task(int argc, char *argv[], IntSlice (*func)(int)) {
+int run_task(int argc, char *argv[], IntSlice (*func)(int), char *label) {
   int n = 100;
   if (argc >= 2) {
     n = atoi(argv[1]);
@@ -18,7 +19,7 @@ int run_task(int argc, char *argv[], IntSlice (*func)(int)) {
       f = fopen(argv[2], "w");
     } else {
       char buf[100];
-      sprintf(buf, "primes-%d.log", n);
+      sprintf(buf, "%s-%d.log", label, n);
       f = fopen(buf, "w");
     }
     if (f == NULL) {
@@ -28,11 +29,19 @@ int run_task(int argc, char *argv[], IntSlice (*func)(int)) {
   }
 
   fprintf(f, "N: %d\n", n);
-  clock_t start = clock();
+
+  struct timespec start, end;
+  clock_gettime(CLOCK_MONOTONIC, &start);
+
   IntSlice primes = func(n);
-  clock_t end = clock();
+
+  clock_gettime(CLOCK_MONOTONIC, &end);
+
+  double elapsed = (end.tv_sec - start.tv_sec);
+  elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
   fprintf(f, "Total: %d\n", primes.len);
-  fprintf(f, "Compute time: %.4fs\n", (double)(end - start) / CLOCKS_PER_SEC);
+  fprintf(f, "Compute time: %.4fs\n", elapsed);
+
   for (int i = 0; i < primes.len; i++) {
     fprintf(f, "%d\n", primes.arr[i]);
   }
