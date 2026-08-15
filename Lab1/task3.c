@@ -11,26 +11,22 @@ IntSlice find_primes(int n) {
   if (n < 2)
     return primes;
 
-#pragma omp parallel
-  {
-    IntSlice lprimes = make_slice(0, 10);
-#pragma omp for schedule(dynamic, 100) ordered
-    for (int i = 2; i < n; i++) {
-      // printf("Thread %d: i: %d\n", omp_get_thread_num(), i);
+#pragma omp parallel for schedule(dynamic, 10) ordered
+  for (int i = 2; i < n; i++) {
 
-      int sqroot = floor(sqrt(i));
-      bool is_prime = true;
-      for (int j = 2; j <= sqroot; j++) {
-        if (i % j == 0) {
-          is_prime = false;
-          break;
-        }
+    int sqroot = floor(sqrt(i));
+    bool is_prime = true;
+    for (int j = 2; j <= sqroot; j++) {
+      if (i % j == 0) {
+        is_prime = false;
+        break;
       }
-      if (is_prime) {
+    }
+    if (is_prime) {
+      // printf("Thread %d: i: %d\n", omp_get_thread_num(), i);
 #pragma omp ordered
-        {
-          append_slice(&primes, i);
-        }
+      {
+        append_slice(&primes, i);
       }
     }
   }
