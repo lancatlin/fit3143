@@ -3,3 +3,8 @@ a.out
 *.o
 .~lock*
 *.zip
+*.log
+task1
+task1-slice
+task2
+task3
