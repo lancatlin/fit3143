@@ -1,5 +1,4 @@
 #include "slice.h"
-#include <stdio.h>
 #include <stdlib.h>
 
 const int GROWTH_RATE = 2;
@@ -19,12 +18,7 @@ IntSlice make_slice(int len, int cap) {
 void append_slice(IntSlice *slice, int value) {
   if (slice->len + 1 > slice->cap) {
     int cap = (GROWTH_RATE * slice->cap);
-    int *arr = (int *)malloc(sizeof(int) * cap);
-    for (int i = 0; i < slice->len; i++) {
-      arr[i] = slice->arr[i];
-    }
-    free(slice->arr);
-    slice->arr = arr;
+    slice->arr = realloc(slice->arr, sizeof(int) * cap);
     slice->cap = cap;
   }
   slice->arr[slice->len] = value;
