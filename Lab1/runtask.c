@@ -3,29 +3,43 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <sys/stat.h>
 #include <time.h>
 
 int run_task(int argc, char *argv[], IntSlice (*func)(int), char *label) {
   int n = 100;
+  char *dir_name = "logs";
+
   if (argc >= 2) {
     n = atoi(argv[1]);
   }
 
+  // Set output stream to stdout or file
   FILE *f = stdout;
   if (n > 100) {
     // Write output to file if exceeding 100
-    if (argc >= 3) {
-      // if the output file is given
-      f = fopen(argv[2], "w");
+
+    // Check log directory
+    struct stat statbuf;
+    if (stat(dir_name, &statbuf) == 0) {
+      printf("Output directory %s exists\n", dir_name);
     } else {
-      char buf[100];
-      sprintf(buf, "%s-%d.log", label, n);
-      f = fopen(buf, "w");
+      // dir does not exist
+      if (mkdir(dir_name, 0755) == 0) {
+        printf("%s directory successfully created\n", dir_name);
+      } else {
+        perror("Failed to create dir");
+      }
     }
+    char filename[100];
+
+    sprintf(filename, "%s/%s-%d.log", dir_name, label, n);
+    f = fopen(filename, "w");
     if (f == NULL) {
       fprintf(stderr, "Cannot open file\n");
       return 1;
     }
+    printf("Output saving to %s\n", filename);
   }
 
   fprintf(f, "N: %d\n", n);
