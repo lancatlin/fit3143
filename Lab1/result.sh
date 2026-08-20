@@ -3,11 +3,12 @@
 
 DIR=logs
 
-n=1000
+N=(1000 10000 100000 1000000 10000000 50000000 100000000 200000000)
+
 
 echo "| N | Task 1 | Task 2 | Task 3 |"
 echo "| -- | --- | --- | --- |"
-for i in {1..6}; do
+for n in "${N[@]}"; do
   echo -n "| $n |"
   for p in {1..3}; do
     file="$DIR/task$p-$n.log"
@@ -15,5 +16,4 @@ for i in {1..6}; do
     echo -n " $t |"
   done
   echo
-  n=$(($n * 10))
 done

@@ -2,13 +2,12 @@
 
 # Benchmark Task 1-3 and show the value for each n
 
-n=1000
+N=(1000 10000 100000 1000000 10000000 50000000 100000000 200000000)
 
-for i in {1..6}; do
+for n in "${N[@]}"; do
   for p in {1..3}; do
     echo "$p: $n"
     ./task$p $n
     sleep 1
   done
-  n=$(($n * 10))
 done
