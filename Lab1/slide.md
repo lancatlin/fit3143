@@ -81,10 +81,6 @@ IntSlice find_primes(int n) {
 
 ---
 
-### Comparison
-
-With 16 threads
-
 | N         | Task 1   | Task 2  | Task 3  |
 | --------- | -------- | ------- | ------- |
 | 1000      | 0.0000   | 0.0006  | 0.0008  |

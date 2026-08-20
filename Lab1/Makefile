@@ -7,10 +7,10 @@ task1: task1.o slice.o runtask.o
 	$(CC) $^ -o $@ $(LIBS)
 
 task2: task2.o slice.o runtask.o
-	$(CC) $^ -o $@ $(LIBS)
+	$(CC) -g $^ -o $@ $(LIBS)
 
 task3: task3.o slice.o runtask.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 %.o: %.c
-	$(CC) -fopenmp -c $^ -o $@
+	$(CC) -fopenmp -g -c $^ -o $@

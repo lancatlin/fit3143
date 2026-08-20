@@ -3,9 +3,10 @@
 #include <math.h>
 #include <pthread.h>
 #include <stdbool.h>
+#include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 
-#define NUM_THREADS 16
 #define MIN(a, b) (a < b ? a : b)
 
 typedef struct {
@@ -19,6 +20,8 @@ typedef struct {
     int step; // the size of numbers to be checked by each thread
     int n;    // the end number to which main is finding all primes from 1
 } InitializerState;
+
+int NUM_THREADS = 1;
 
 // Assign each thread with start and end numbers along with a data structure
 // (IntSlice) to store result
@@ -65,12 +68,12 @@ void *find_primes_from(void *tPara) {
 
 IntSlice find_primes(int n) {
     // POSIX threads parallelization
-    pthread_t tid[NUM_THREADS];
-    ThreadParameters tArg[NUM_THREADS];
+    pthread_t *tid = malloc(sizeof(pthread_t) * NUM_THREADS);
+    ThreadParameters *tArg = malloc(sizeof(ThreadParameters) * NUM_THREADS);
 
     InitializerState states;
     states.next = 0;
-    states.step = ceil(n / NUM_THREADS);
+    states.step = ceil((float)n / NUM_THREADS);
     states.n = n;
 
     for (int i = 0; i < NUM_THREADS; i++) {
@@ -90,9 +93,16 @@ IntSlice find_primes(int n) {
 
         free_para(&tArg[i]);
     }
+    free(tid);
+    free(tArg);
     return result;
 }
 
 int main(int argc, char *argv[]) {
+    if (getenv("NUM_THREADS") != NULL) {
+        NUM_THREADS = atoi(getenv("NUM_THREADS"));
+    }
+    printf("Threads: %d\n", NUM_THREADS);
+
     return run_task(argc, argv, find_primes, "task2");
 }

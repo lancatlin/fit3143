@@ -10,7 +10,7 @@
       "args": ["-j8"],
       "cwd": "$ZED_WORKTREE_ROOT/Lab1",
     },
-    "program": "$ZED_WORKTREE_ROOT/Lab1/task3",
+    "program": "$ZED_WORKTREE_ROOT/Lab1/task2",
     "request": "launch",
     "adapter": "CodeLLDB",
   },
