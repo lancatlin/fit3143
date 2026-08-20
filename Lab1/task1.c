@@ -15,6 +15,7 @@ IntSlice find_primes(int n) {
         for (int j = 2; j <= sqroot; j++) {
             if (i % j == 0) {
                 is_prime = false;
+                break;
             }
         }
         if (is_prime) {
