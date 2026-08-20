@@ -5,7 +5,7 @@
 #include <stdbool.h>
 #include <stdlib.h>
 
-#define NUM_THREADS 2
+#define NUM_THREADS 16
 #define MIN(a, b) (a < b ? a : b)
 
 typedef struct {
