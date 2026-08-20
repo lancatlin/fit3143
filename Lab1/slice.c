@@ -3,6 +3,7 @@
 
 const int GROWTH_RATE = 2;
 
+// Returns an IntSlice
 IntSlice make_slice(int len, int cap) {
   if (len > cap) {
     cap = len;
@@ -15,6 +16,7 @@ IntSlice make_slice(int len, int cap) {
   return slice;
 }
 
+// Appends given value to Intslice
 void append_slice(IntSlice *slice, int value) {
   if (slice->len + 1 > slice->cap) {
     int cap = (GROWTH_RATE * slice->cap);
@@ -25,6 +27,7 @@ void append_slice(IntSlice *slice, int value) {
   slice->len += 1;
 }
 
+// Free memory used by Intslice
 void free_slice(IntSlice *slice) {
   free(slice->arr);
   slice->arr = NULL;
