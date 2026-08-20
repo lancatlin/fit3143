@@ -1,3 +1,8 @@
+// Justin Lin       35808217    hlin0094@student.monash.edu
+// Clement Angelo   35664614    cang0028@student.monash.edu
+// Compile by running `make`
+// Execute by `./task3`
+// Set number of threads by `OMP_NUM_THREADS=8 ./task3`
 #include "runtask.h"
 #include "slice.h"
 #include <math.h>
@@ -6,24 +11,30 @@
 #include <stdio.h>
 #include <stdlib.h>
 
-// find all primes up to but not including n
 IntSlice find_primes(int n) {
     if (n < 2)
         return make_slice(0, 1);
 
-    IntSlice *temp = NULL;
+    // list of IntSlice to store primes from each thread
+    IntSlice *local_result = NULL;
+    // A shared var that will be updated in parallel region
     int THREAD_COUNT = 1;
+
+    // Start parallelizing
 #pragma omp parallel
     {
+        // Use single block to initialise slices for each thread
 #pragma omp single
         {
             THREAD_COUNT = omp_get_num_threads();
-            temp = malloc(sizeof(IntSlice) * THREAD_COUNT);
+            local_result = malloc(sizeof(IntSlice) * THREAD_COUNT);
             for (int i = 0; i < THREAD_COUNT; i++) {
-                temp[i] = make_slice(0, 10);
+                local_result[i] = make_slice(0, 10);
             }
         }
         int thread = omp_get_thread_num();
+
+        // Separate the loop into different chunks and run independently
 #pragma omp for
         for (int i = 2; i < n; i++) {
             int sqroot = floor(sqrt(i));
@@ -35,24 +46,26 @@ IntSlice find_primes(int n) {
                 }
             }
             if (is_prime) {
-                append_slice(&temp[thread], i);
+                // Do not require critical region because it is saved locally
+                append_slice(&local_result[thread], i);
             }
         }
     }
 
+    // Count the total size of the result
     int count = 0;
     for (int thread = 0; thread < THREAD_COUNT; thread++) {
-        count += temp[thread].len;
+        count += local_result[thread].len;
     }
-    // merging results
+    // Merge the result from each thread into one slice
     IntSlice primes = make_slice(0, count);
     for (int thread = 0; thread < THREAD_COUNT; thread++) {
-        for (int i = 0; i < temp[thread].len; i++) {
-            append_slice(&primes, temp[thread].arr[i]);
+        for (int i = 0; i < local_result[thread].len; i++) {
+            append_slice(&primes, local_result[thread].arr[i]);
         }
-        free_slice(&temp[thread]);
+        free_slice(&local_result[thread]);
     }
-    free(temp);
+    free(local_result);
     return primes;
 }
 

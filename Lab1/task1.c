@@ -1,3 +1,7 @@
+// Justin Lin       35808217    hlin0094@student.monash.edu
+// Clement Angelo   35664614    cang0028@student.monash.edu
+// Compile by running `make`
+// Execute by `./task1`
 #include "runtask.h"
 #include "slice.h"
 #include <math.h>
