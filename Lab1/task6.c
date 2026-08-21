@@ -12,7 +12,7 @@
 #define SERIAL_LIMIT 100
 
 int check_composite_serial(int n, int end, IntSlice *is_composite) {
-    printf("N: %d, end: %d\n", n, end);
+    printf("Serial N: %d, end: %d\n", n, end);
     int count = 0;
     for (int i = 2; i < end; i++) {
         if (!is_composite->arr[i]) {
@@ -22,6 +22,7 @@ int check_composite_serial(int n, int end, IntSlice *is_composite) {
             }
         }
     }
+    printf("Finish N: %d, end: %d\n", n, end);
     return count;
 }
 
@@ -34,6 +35,7 @@ int check_composite(int n, int end, IntSlice *is_composite) {
     } else {
         count += check_composite(n, start, is_composite);
     }
+#pragma omp parallel for schedule(dynamic, 1000)
     for (int i = start; i < end; i++) {
         if (!is_composite->arr[i]) {
             count++;
@@ -42,6 +44,7 @@ int check_composite(int n, int end, IntSlice *is_composite) {
             }
         }
     }
+    printf("Finished: %d\n", end);
     return count;
 }
 
