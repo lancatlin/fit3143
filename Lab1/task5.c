@@ -6,10 +6,8 @@
 #include "runtask.h"
 #include "slice.h"
 #include <math.h>
-#include <omp.h>
 #include <stdbool.h>
 #include <stdio.h>
-#define SERIAL_LIMIT 1000
 
 IntSlice find_primes(int n) {
     if (n < 2)
@@ -18,10 +16,11 @@ IntSlice find_primes(int n) {
     IntSlice is_composite = make_slice(n, n);
 
     int count = 0;
-    for (int i = 2; i < n; i++) {
+    int end = ceil(sqrt(n));
+    for (int i = 2; i < end; i++) {
         if (!is_composite.arr[i]) {
             count++;
-            for (int j = 2; j * i < n; j++) {
+            for (int j = i; j * i < n; j++) {
                 is_composite.arr[i * j] = true;
             }
         }
