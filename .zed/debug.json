@@ -11,7 +11,7 @@
       "cwd": "$ZED_WORKTREE_ROOT/Lab1",
     },
     "program": "$ZED_WORKTREE_ROOT/Lab1/task6",
-    "args": ["10000"],
+    "args": ["1000000"],
     "request": "launch",
     "adapter": "CodeLLDB",
   },

@@ -9,9 +9,13 @@
 
 // find all primes up to but not including n
 IntSlice find_primes(int n) {
+    // result
     IntSlice primes = make_slice(0, 10);
+    // input validation
     if (n < 2)
         return primes;
+
+    // prime finding algorithm
     int count = 0;
     for (int i = 2; i < n; i++) {
         int sqroot = floor(sqrt(i));
@@ -22,10 +26,12 @@ IntSlice find_primes(int n) {
                 break;
             }
         }
+        // append prime to result
         if (is_prime) {
             append_slice(&primes, i);
         }
     }
+    // output
     return primes;
 }
 

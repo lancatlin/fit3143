@@ -12,6 +12,7 @@
 #include <stdlib.h>
 #include <string.h>
 
+// Helper function to return the min of two numbers
 #define MIN(a, b) (a < b ? a : b)
 
 typedef struct {
@@ -42,8 +43,8 @@ void free_para(ThreadParameters *tPara) { free_slice(&(tPara->primes)); }
 
 // find all primes between [start, end) and store the results in an output
 // parameter
-void *find_primes_from(void *tPara) {
-    // Getting start and end numbers
+void *thread_func(void *tPara) {
+    // Fetching function parameters
     ThreadParameters *tP = (ThreadParameters *)tPara;
     int start = tP->startNumber;
     int end = tP->endNumber;
@@ -64,6 +65,7 @@ void *find_primes_from(void *tPara) {
                 break;
             }
         }
+        // Append prime to result
         if (is_prime) {
             append_slice(pPrimes, i);
         }
@@ -76,26 +78,30 @@ IntSlice find_primes(int n) {
     pthread_t *tid = malloc(sizeof(pthread_t) * NUM_THREADS);
     ThreadParameters *tArg = malloc(sizeof(ThreadParameters) * NUM_THREADS);
 
+    // primes to be returned
+    IntSlice result = make_slice(0, 10);
+
+    // States to initialize start and end range for threads
     InitializerState states;
     states.next = 0;
     states.step = ceil((float)n / NUM_THREADS);
     states.n = n;
 
+    // Thread Creation: Forking
     for (int i = 0; i < NUM_THREADS; i++) {
         initialize_para(&states, &tArg[i]);
-        pthread_create(&tid[i], NULL, &find_primes_from, &tArg[i]);
+        pthread_create(&tid[i], NULL, &thread_func, &tArg[i]);
     }
 
-    IntSlice result = make_slice(0, 10);
-
+    // Thread Elimination: Joining
     for (int i = 0; i < NUM_THREADS; i++) {
         pthread_join(tid[i], NULL);
-
+        // Collating primes to result (IntSlice)
         IntSlice p = tArg[i].primes;
         for (int j = 0; j < p.len; j++) {
             append_slice(&result, p.arr[j]);
         }
-
+        // Free ThreadParameter struct
         free_para(&tArg[i]);
     }
     free(tid);

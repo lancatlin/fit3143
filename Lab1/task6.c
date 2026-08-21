@@ -17,8 +17,11 @@ int check_composite_serial(int n, int end, IntSlice *is_composite) {
     for (int i = 2; i < end; i++) {
         if (!is_composite->arr[i]) {
             count++;
-            for (int j = 2; j * i < n; j++) {
-                is_composite->arr[i * j] = true;
+#pragma omp parallel for
+            for (int j = i; j < n / i + 1; j++) {
+                if (i * j < n) {
+                    is_composite->arr[i * j] = true;
+                }
             }
         }
     }
@@ -36,10 +39,10 @@ int check_composite(int n, int end, IntSlice *is_composite) {
         count += check_composite(n, start, is_composite);
     }
 #pragma omp parallel for schedule(dynamic, 1000)
-    for (int i = start; i < end; i++) {
+    for (long i = start; i < end; i++) {
         if (!is_composite->arr[i]) {
             count++;
-            for (int j = 2; j * i < n; j++) {
+            for (long j = i; j * i < n; j++) {
                 is_composite->arr[i * j] = true;
             }
         }
