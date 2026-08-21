@@ -9,26 +9,57 @@
 #include <omp.h>
 #include <stdbool.h>
 #include <stdio.h>
-#include <stdlib.h>
+#define SERIAL_LIMIT 1000
 
-int check_primes(int n, IntSlice *result) {
-    int count = 0;
+void check_primes_serial(int n, IntSlice *is_primes, IntSlice *primes) {
+    printf("Serial: %d\n", n);
     for (int i = 2; i < n; i++) {
         int sqroot = floor(sqrt(i));
         bool is_prime = true;
-        for (int j = 2; j <= sqroot; j++) {
-            if (i % j == 0) {
+        for (int j = 0; j < primes->len && primes->arr[j] <= sqroot; j++) {
+            if (i % primes->arr[j] == 0) {
                 is_prime = false;
                 break;
             }
         }
         if (is_prime) {
             // Do not require critical region because it is saved locally
-            result->arr[i] = true;
-            count++;
+            is_primes->arr[i] = true;
+            append_slice(primes, i);
         }
     }
-    return count;
+}
+
+void check_primes(int n, IntSlice *is_primes, IntSlice *primes) {
+    printf("Check N: %d\n", n);
+    int start = ceil(sqrt(n));
+    if (n <= SERIAL_LIMIT) {
+        return check_primes_serial(n, is_primes, primes);
+    } else {
+        check_primes(start, is_primes, primes);
+    }
+#pragma omp parallel for schedule(guided)
+    for (int i = start; i < n; i++) {
+        int sqroot = floor(sqrt(i));
+        bool is_prime = true;
+        for (int j = 0; j < primes->len && primes->arr[j] <= sqroot; j++) {
+            if (i % primes->arr[j] == 0) {
+                is_prime = false;
+                break;
+            }
+        }
+        if (is_prime) {
+            // Do not require critical region because it is saved locally
+            is_primes->arr[i] = true;
+        }
+    }
+
+    printf("Finished N: %d\n", n);
+    for (int i = start; i < n; i++) {
+        if (is_primes->arr[i]) {
+            append_slice(primes, i);
+        }
+    }
 }
 
 IntSlice find_primes(int n) {
@@ -37,15 +68,9 @@ IntSlice find_primes(int n) {
 
     IntSlice is_primes = make_slice(n, n);
 
-    int count = check_primes(n, &is_primes);
+    IntSlice primes = make_slice(0, 100);
+    check_primes(n, &is_primes, &primes);
 
-    // Merge the result from each thread into one slice
-    IntSlice primes = make_slice(0, count);
-    for (int i = 0; i < n; i++) {
-        if (is_primes.arr[i]) {
-            append_slice(&primes, i);
-        }
-    }
     return primes;
 }
 
