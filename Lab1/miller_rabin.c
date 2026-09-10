@@ -5,26 +5,44 @@
 // Set number of threads by `OMP_NUM_THREADS=8 ./task3`
 #include "runtask.h"
 #include "slice.h"
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
-#define K 15
+#define K 20
 
 // Return a random number from 2 to n-2
 long rand_base(int n) { return rand() % (n - 3) + 2; }
 
-long repeated_squaring(int a, int b, int n) {
+bool miller_rabin(long a, long n) {
     // return a^b mod n
-    // printf("repeated squaring: a %d, b %d, n %d\n", a, b, n);
+    // printf("repeated squaring: a %ld, n %ld\n", a, n);
     long x = 1;
-    for (int i = 30; i >= 0; i--) {
-        bool bit = b >> i & 1;
+    long b = n - 1;
+    long t = b;
+    long s = 0;
+    while (t % 2 == 0) {
+        s++;
+        t >>= 1;
+    }
+
+    long d = floor(log2(b)) + 1;
+
+    for (long i = 0; i < d; i++) {
+        bool bit = b >> (d - i - 1) & 1;
         x = (x * x) % n;
         if (bit) {
             x = (x * a) % n;
         }
+        if (i >= (d - s)) {
+            if (x == n - 1) {
+                return i != d;
+            } else if (x == 1) {
+                return i == d - s;
+            }
+        }
     }
-    return x;
+    return x == 1;
 }
 
 bool is_prime(int n, int k) {
@@ -37,7 +55,7 @@ bool is_prime(int n, int k) {
     // printf("is_prime: %d\n", n);
     for (int i = 0; i < k; i++) {
         long base = rand_base(n);
-        if (repeated_squaring(base, n - 1, n) != 1) {
+        if (!miller_rabin(base, n)) {
             return false;
         }
     }
