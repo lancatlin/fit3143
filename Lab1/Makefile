@@ -3,7 +3,7 @@
 CC=gcc
 LIBS= -lm -pthread
 .PHONY: all
-all: task1 task2 task3 task4 task5 task6
+all: task1 task2 task3 task4 task5 task6 miller_rabin
 
 task1: task1.o slice.o runtask.o
 	$(CC) $^ -o $@ $(LIBS)
@@ -21,6 +21,9 @@ task5: task5.o slice.o runtask.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 task6: task6.o slice.o runtask.o
+	$(CC) -fopenmp -g $^ -o $@ $(LIBS)
+
+miller_rabin: miller_rabin.o slice.o runtask.o
 	$(CC) -fopenmp -g $^ -o $@ $(LIBS)
 
 %.o: %.c
