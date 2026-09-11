@@ -1,6 +1,10 @@
 services:
   app:
-    image: monashfit/fit3143
-    command: tail -F anything
+    # image: monashfit/fit3143
+    build: .
+    ports:
+      - 2222:22
+    hostname: fit3143
     volumes:
       - .:/home/student/project
+      # - ./ssh/authorized_keys:/home/student/.ssh/authorized_keys

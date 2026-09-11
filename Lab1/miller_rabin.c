@@ -14,7 +14,7 @@
 // Return a random number from 2 to n-2
 long rand_base(int n) { return rand() % (n - 3) + 2; }
 
-long repeated_squaring(int a, int b, int n) {
+long repeated_squaring(long a, long b, long n) {
     // return a^b mod n
     // printf("repeated squaring: a %d, b %d, n %d\n", a, b, n);
     long x = 1;
