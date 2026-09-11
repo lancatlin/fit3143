@@ -20,8 +20,8 @@ IntSlice find_primes(int n) {
     for (int i = 2; i < end; i++) {
         if (!is_composite.arr[i]) {
             count++;
-            for (int j = i; j * i < n; j++) {
-                is_composite.arr[i * j] = true;
+            for (int j = i * i; j < n; j += i) {
+                is_composite.arr[j] = true;
             }
         }
     }

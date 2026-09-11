@@ -15,7 +15,7 @@ task3: task3.o slice.o runtask.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 task4: task4.o slice.o runtask.o
-	$(CC) -fopenmp $^ -o $@ $(LIBS)
+	$(CC) -fopenmp -fdump-tree-optimized $^ -o $@ $(LIBS)
 
 task5: task5.o slice.o runtask.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
@@ -27,4 +27,4 @@ miller_rabin: miller_rabin.o slice.o runtask.o
 	$(CC) -fopenmp -g $^ -o $@ $(LIBS)
 
 %.o: %.c
-	$(CC) -fopenmp -g -c $^ -o $@
+	$(CC) -fopenmp -fdump-tree-optimized -g -c $^ -o $@
