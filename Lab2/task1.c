@@ -5,7 +5,12 @@
 #include "runtask.h"
 #include "slice.h"
 #include <math.h>
+#include <mpi/mpi.h>
 #include <stdbool.h>
+#include <stdio.h>
+
+int mpi_rank = 0;
+int mpi_size = 1;
 
 // find all primes up to but not including n
 IntSlice find_primes(int n) {
@@ -36,5 +41,14 @@ IntSlice find_primes(int n) {
 }
 
 int main(int argc, char *argv[]) {
-    return run_task(argc, argv, find_primes, "task1");
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+    printf("Rank: %d, size: %d\n", mpi_rank, mpi_size);
+
+    int exit_code = run_task(argc, argv, find_primes, "task1");
+
+    MPI_Finalize();
+    return exit_code;
 }
