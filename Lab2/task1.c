@@ -56,18 +56,19 @@ int dispatch_jobs(int n, IntSlice is_primes) {
     struct ProcessRequest *send_data = (struct ProcessRequest *)malloc(
         sizeof(struct ProcessRequest) * mpi_size);
 
-    int base_step = n / mpi_size;
+    // int base_step = n / mpi_size;
     if (mpi_rank == 0) {
         // int l = n / mpi_size / 8;
-        int l = 0;
-        int prev = 0;
+        double ratio = (double)n * n / mpi_size / 4;
+        int base = n / 2 / mpi_size;
+        printf("ratio: %f\n", ratio);
         for (int i = 0; i < mpi_size; i++) {
-            int step = base_step + l * (mpi_size / 2 - i);
-            send_data[i].start = prev;
-            send_data[i].end = MIN(prev + step, n);
-            prev += step;
+            send_data[i].start = floor(sqrt((double)i * ratio)) + i * base;
+            send_data[i].end =
+                MIN(floor(sqrt(((double)i + 1) * ratio)) + (i + 1) * base, n);
             printf("senddata[%d].start = %d, step=%d, end = %d\n", i,
-                   send_data[i].start, step, send_data[i].end);
+                   send_data[i].start, send_data[i].end - send_data[i].start,
+                   send_data[i].end);
         }
     }
 
