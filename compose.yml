@@ -6,5 +6,5 @@ services:
       - 2222:22
     hostname: fit3143
     volumes:
-      - .:/home/student/project
+      - .:/home/student/project:rw
       # - ./ssh/authorized_keys:/home/student/.ssh/authorized_keys
