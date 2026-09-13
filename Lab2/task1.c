@@ -12,18 +12,16 @@
 int mpi_rank = 0;
 int mpi_size = 1;
 
-typedef struct {
+struct ProcessRequest {
     int startNumber; // Range includes start number,
     int endNumber;   // But not end number
-} ProcessParameter;
+};
 
 // find all primes up to but not including n
-IntSlice find_primes(int n) {
-    // result
-    IntSlice primes = make_slice(0, 10);
+int find_primes(int n, IntSlice is_primes) {
     // input validation
     if (n < 2)
-        return primes;
+        return 0;
 
     // prime finding algorithm
     int count = 0;
@@ -38,11 +36,11 @@ IntSlice find_primes(int n) {
         }
         // append prime to result
         if (is_prime) {
-            append_slice(&primes, i);
+            is_primes.arr[i] = is_prime;
+            count++;
         }
     }
-    // output
-    return primes;
+    return count;
 }
 
 int main(int argc, char *argv[]) {

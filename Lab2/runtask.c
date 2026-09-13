@@ -8,7 +8,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int run_task(int argc, char *argv[], IntSlice (*func)(int), char *label) {
+int run_task(int argc, char *argv[], int (*func)(int, IntSlice), char *label) {
     int n = 100;
     char *dir_name = "logs";
 
@@ -49,17 +49,20 @@ int run_task(int argc, char *argv[], IntSlice (*func)(int), char *label) {
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    IntSlice primes = func(n);
+    IntSlice primes = make_slice(n, n);
+    int count = func(n, primes);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double elapsed = (end.tv_sec - start.tv_sec);
     elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-    fprintf(f, "Total: %d\n", primes.len);
+    fprintf(f, "Total: %d\n", count);
     fprintf(f, "Compute time: %.4f\n", elapsed);
 
     for (int i = 0; i < primes.len; i++) {
-        fprintf(f, "%d\n", primes.arr[i]);
+        if (primes.arr[i]) {
+            fprintf(f, "%d\n", i);
+        }
     }
     fclose(f);
 
