@@ -46,23 +46,27 @@ int find_primes(struct ProcessRequest req, IntSlice is_primes) {
 
 // find all primes up to but not including n
 int dispatch_jobs(int n, IntSlice is_primes) {
+    printf("Rank: %d, size: %d\n", mpi_rank, mpi_size);
     struct ProcessRequest *send_data = (struct ProcessRequest *)malloc(
         sizeof(struct ProcessRequest) * mpi_size);
 
     if (mpi_rank == 0) {
         int step = n / mpi_size;
-        for (int i = 0; i < mpi_size; i += step) {
-            send_data[i].start = i;
-            send_data[i].end = i;
+        for (int i = 0; i < mpi_size; i++) {
+            send_data[i].start = i * step;
+            send_data[i].end = (i + 1) * step;
+            printf("senddata[%d].start = %d\n", i, send_data[i].start);
         }
     }
 
     struct ProcessRequest received = {0, 0};
+    struct ProcessRequest send = {1, 2};
 
-    MPI_Scatter(&send_data, 1, Request, &received, 1, Request, 0,
+    MPI_Scatter(send_data, 1, Request, &received, 1, Request, 0,
                 MPI_COMM_WORLD);
 
-    printf("Received: start: %d, end: %d\n", received.start, received.end);
+    printf("Received: rank: %d start: %d, end: %d\n", mpi_rank, received.start,
+           received.end);
     MPI_Barrier(MPI_COMM_WORLD);
     return 0;
 }
@@ -87,8 +91,6 @@ int main(int argc, char *argv[]) {
 
     MPI_Type_create_struct(2, blocklen, disp, type, &Request);
     MPI_Type_commit(&Request);
-
-    printf("Rank: %d, size: %d\n", mpi_rank, mpi_size);
 
     int exit_code = run_task(argc, argv, dispatch_jobs, "task1");
 
