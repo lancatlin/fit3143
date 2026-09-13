@@ -8,6 +8,7 @@
 #include <mpi/mpi.h>
 #include <stdbool.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int mpi_rank = 0;
 int mpi_size = 1;
@@ -45,10 +46,24 @@ int find_primes(struct ProcessRequest req, IntSlice is_primes) {
 
 // find all primes up to but not including n
 int dispatch_jobs(int n, IntSlice is_primes) {
-    struct ProcessRequest req = {2, n};
-    MPI_Bcast(&req, 1, Request, 0, MPI_COMM_WORLD);
+    struct ProcessRequest *send_data = (struct ProcessRequest *)malloc(
+        sizeof(struct ProcessRequest) * mpi_size);
 
-    printf("Received: start: %d, end: %d\n", req.start, req.end);
+    if (mpi_rank == 0) {
+        int step = n / mpi_size;
+        for (int i = 0; i < mpi_size; i += step) {
+            send_data[i].start = i;
+            send_data[i].end = i;
+        }
+    }
+
+    struct ProcessRequest received = {0, 0};
+
+    MPI_Scatter(&send_data, 1, Request, &received, 1, Request, 0,
+                MPI_COMM_WORLD);
+
+    printf("Received: start: %d, end: %d\n", received.start, received.end);
+    MPI_Barrier(MPI_COMM_WORLD);
     return 0;
 }
 
@@ -75,14 +90,7 @@ int main(int argc, char *argv[]) {
 
     printf("Rank: %d, size: %d\n", mpi_rank, mpi_size);
 
-    if (mpi_rank == 0) {
-        int exit_code = run_task(argc, argv, dispatch_jobs, "task1");
-    } else {
-        struct ProcessRequest req;
-        MPI_Bcast(&req, 1, Request, 0, MPI_COMM_WORLD);
-        printf("Received. Rank: %d, start: %d, end: %d\n", mpi_rank, req.start,
-               req.end);
-    }
+    int exit_code = run_task(argc, argv, dispatch_jobs, "task1");
 
     MPI_Finalize();
     return 0;
