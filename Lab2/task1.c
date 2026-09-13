@@ -65,10 +65,54 @@ int dispatch_jobs(int n, IntSlice is_primes) {
     MPI_Scatter(send_data, 1, Request, &received, 1, Request, 0,
                 MPI_COMM_WORLD);
 
+    int count = find_primes(received, is_primes);
+
     printf("Received: rank: %d start: %d, end: %d\n", mpi_rank, received.start,
            received.end);
+
     MPI_Barrier(MPI_COMM_WORLD);
-    return 0;
+
+    if (mpi_rank == 0) {
+        int collected_count = 1;
+        IntSlice collected = make_slice(mpi_size, mpi_size);
+        collected.arr[0] = true;
+        while (collected_count < mpi_size) {
+            for (int node = 1; node < mpi_size; node++) {
+                if (collected.arr[node]) {
+                    continue;
+                }
+                int lcount = 0;
+                MPI_Recv(&count, 1, MPI_INT, node, 0, MPI_COMM_WORLD,
+                         MPI_STATUS_IGNORE);
+
+                printf("lcount of %d: %d\n", node, lcount);
+
+                if (lcount > 0) {
+                    IntSlice buffer = make_slice(lcount, lcount);
+                    MPI_Recv(buffer.arr, lcount, MPI_INT, node, 0,
+                             MPI_COMM_WORLD, MPI_STATUSES_IGNORE);
+                    for (int j = 0; j < buffer.len; j++) {
+                        is_primes.arr[j] = true;
+                    }
+                    collected_count++;
+                    collected.arr[node] = true;
+                }
+            }
+        }
+    } else {
+        printf("Rank %d: count: %d\n", mpi_rank, count);
+        MPI_Bsend(&count, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+
+        IntSlice buffer = make_slice(0, count);
+        for (int j = received.start; j < received.end; j++) {
+            if (is_primes.arr[j]) {
+                append_slice(&buffer, j);
+            }
+        }
+        MPI_Bsend(buffer.arr, count, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    }
+
+    return count;
 }
 
 int main(int argc, char *argv[]) {
