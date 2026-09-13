@@ -10,6 +10,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 
+#define MIN(a, b) (((a) < (b)) ? (a) : (b))
+
 int mpi_rank = 0;
 int mpi_size = 1;
 MPI_Datatype Request;
@@ -54,12 +56,18 @@ int dispatch_jobs(int n, IntSlice is_primes) {
     struct ProcessRequest *send_data = (struct ProcessRequest *)malloc(
         sizeof(struct ProcessRequest) * mpi_size);
 
-    int step = n / mpi_size;
+    int base_step = n / mpi_size;
     if (mpi_rank == 0) {
+        // int l = n / mpi_size / 8;
+        int l = 0;
+        int prev = 0;
         for (int i = 0; i < mpi_size; i++) {
-            send_data[i].start = i * step;
-            send_data[i].end = (i + 1) * step;
-            printf("senddata[%d].start = %d\n", i, send_data[i].start);
+            int step = base_step + l * (mpi_size / 2 - i);
+            send_data[i].start = prev;
+            send_data[i].end = MIN(prev + step, n);
+            prev += step;
+            printf("senddata[%d].start = %d, step=%d, end = %d\n", i,
+                   send_data[i].start, step, send_data[i].end);
         }
     }
 
@@ -69,23 +77,36 @@ int dispatch_jobs(int n, IntSlice is_primes) {
     MPI_Scatter(send_data, 1, Request, &received, 1, Request, 0,
                 MPI_COMM_WORLD);
 
-    find_primes(received, is_primes);
+    int lcount = find_primes(received, is_primes);
 
-    printf("Received: rank: %d start: %d, end: %d\n", mpi_rank, received.start,
-           received.end);
+    printf("Done: rank: %d start: %d, end: %d, count: %d\n", mpi_rank,
+           received.start, received.end, lcount);
 
-    MPI_Gather(&is_primes.arr[received.start], step, MPI_INT, is_primes.arr,
-               step, MPI_INT, 0, MPI_COMM_WORLD);
+    IntSlice counts = make_slice(mpi_size, mpi_size);
 
-    int count = 0;
+    MPI_Gather(&lcount, 1, MPI_INT, counts.arr, 1, MPI_INT, 0, MPI_COMM_WORLD);
+
+    int *displs = NULL;
+    int *steps = NULL;
+
+    int total = 0;
     if (mpi_rank == 0) {
-        for (int i = 0; i < n; i++) {
-            if (is_primes.arr[i]) {
-                count++;
-            }
+        displs = (int *)malloc(sizeof(int) * mpi_size);
+        steps = (int *)malloc(sizeof(int) * mpi_size);
+        for (int i = 0; i < mpi_size; i++) {
+            displs[i] = send_data[i].start;
+            steps[i] = send_data[i].end - send_data[i].start;
+            total += counts.arr[i];
         }
     }
-    return count;
+
+    printf("rank: %d ready to send\n", mpi_rank);
+
+    MPI_Gatherv(&is_primes.arr[received.start], received.end - received.start,
+                MPI_INT, is_primes.arr, steps, displs, MPI_INT, 0,
+                MPI_COMM_WORLD);
+
+    return total;
 }
 
 int main(int argc, char *argv[]) {
