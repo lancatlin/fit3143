@@ -12,6 +12,11 @@
 int mpi_rank = 0;
 int mpi_size = 1;
 
+typedef struct {
+    int startNumber; // Range includes start number,
+    int endNumber;   // But not end number
+} ProcessParameter;
+
 // find all primes up to but not including n
 IntSlice find_primes(int n) {
     // result
