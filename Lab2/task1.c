@@ -27,11 +27,13 @@ IntSlice find_primes_sieve(int n) {
         return make_slice(0, 1);
 
     IntSlice is_composite = make_slice(n, n);
+    IntSlice primes = make_slice(0, 100);
 
     int count = 0;
     int end = ceil(sqrt(n));
     for (int i = 2; i < end; i++) {
         if (!is_composite.arr[i]) {
+            append_slice(&primes, i);
             count++;
             for (int j = i * i; j < n; j += i) {
                 is_composite.arr[j] = true;
@@ -39,13 +41,6 @@ IntSlice find_primes_sieve(int n) {
         }
     }
 
-    IntSlice primes = make_slice(0, count);
-    // check_primes(n, &is_primes, &primes);
-    for (int i = 2; i < n; i++) {
-        if (!is_composite.arr[i]) {
-            append_slice(&primes, i);
-        }
-    }
     free_slice(&is_composite);
 
     return primes;
