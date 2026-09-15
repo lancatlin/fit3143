@@ -31,12 +31,13 @@ IntSlice find_primes(struct ProcessRequest req) {
         req.start = 2;
     }
     // prime finding algorithm
-    int count = 0;
+    long scan_count = 0;
 
     for (int i = req.start; i < req.end; i++) {
         int sqroot = floor(sqrt(i));
         bool is_prime = true;
         for (int j = 2; j <= sqroot; j++) {
+            scan_count++;
             if (i % j == 0) {
                 is_prime = false;
                 break;
@@ -45,10 +46,26 @@ IntSlice find_primes(struct ProcessRequest req) {
         // append prime to result
         if (is_prime) {
             append_slice(&primes, i);
-            count++;
         }
     }
+    printf(
+        "Done: rank: %d start: %d, end: %d, size: %d, primes: %d, scan: %ld\n",
+        mpi_rank, req.start, req.end, req.end - req.start, primes.len,
+        scan_count);
+
     return primes;
+}
+
+void receive_job() {
+    struct ProcessRequest req = {0, 0};
+
+    MPI_Scatter(NULL, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
+
+    IntSlice primes = find_primes(req);
+
+    MPI_Gather(&primes.len, 1, MPI_INT, NULL, 1, MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(primes.arr, primes.len, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
+                MPI_COMM_WORLD);
 }
 
 // find all primes up to but not including n
@@ -58,31 +75,25 @@ IntSlice dispatch_jobs(int n) {
         sizeof(struct ProcessRequest) * mpi_size);
 
     // int base_step = n / mpi_size;
-    if (mpi_rank == 0) {
-        // int l = n / mpi_size / 8;
-        double ratio = (double)n * n / mpi_size / 4;
-        int base = n / 2 / mpi_size;
-        printf("ratio: %f\n", ratio);
-        for (int i = 0; i < mpi_size; i++) {
-            send_data[i].start = floor(sqrt((double)i * ratio)) + i * base;
-            send_data[i].end =
-                floor(sqrt(((double)i + 1) * ratio)) + (i + 1) * base;
-            printf("senddata[%d].start = %d, step=%d, end = %d\n", i,
-                   send_data[i].start, send_data[i].end - send_data[i].start,
-                   send_data[i].end);
-        }
-        send_data[mpi_size - 1].end = n;
+    // int l = n / mpi_size / 8;
+    double ratio = (double)n * n / mpi_size / 4;
+    int base = n / 2 / mpi_size;
+    printf("ratio: %f\n", ratio);
+    for (int i = 0; i < mpi_size; i++) {
+        send_data[i].start = floor(sqrt((double)i * ratio)) + i * base;
+        send_data[i].end =
+            floor(sqrt(((double)i + 1) * ratio)) + (i + 1) * base;
+        printf("senddata[%d].start = %d, step=%d, end = %d\n", i,
+               send_data[i].start, send_data[i].end - send_data[i].start,
+               send_data[i].end);
     }
+    send_data[mpi_size - 1].end = n;
 
     struct ProcessRequest req = {0, 0};
-    struct ProcessRequest send = {1, 2};
 
     MPI_Scatter(send_data, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
     IntSlice primes = find_primes(req);
-
-    printf("Done: rank: %d start: %d, end: %d, count: %d\n", mpi_rank,
-           req.start, req.end, primes.len);
 
     IntSlice counts = make_slice(mpi_size, mpi_size);
 
@@ -94,25 +105,23 @@ IntSlice dispatch_jobs(int n) {
 
     int sum = 0;
     IntSlice all_primes = make_slice(0, 0);
-    if (mpi_rank == 0) {
-        displs = (int *)malloc(sizeof(int) * mpi_size);
-        steps = (int *)malloc(sizeof(int) * mpi_size);
-        for (int i = 0; i < mpi_size; i++) {
-            displs[i] = sum;
-            steps[i] = counts.arr[i];
-            sum += counts.arr[i];
-        }
-        free_slice(&all_primes);
-        all_primes = make_slice(sum, sum);
+    displs = (int *)malloc(sizeof(int) * mpi_size);
+    steps = (int *)malloc(sizeof(int) * mpi_size);
+    for (int i = 0; i < mpi_size; i++) {
+        displs[i] = sum;
+        steps[i] = counts.arr[i];
+        sum += counts.arr[i];
     }
-
-    printf("rank: %d ready to send\n", mpi_rank);
+    free_slice(&all_primes);
+    all_primes = make_slice(sum, sum);
 
     MPI_Gatherv(primes.arr, primes.len, MPI_INT, all_primes.arr, steps, displs,
                 MPI_INT, 0, MPI_COMM_WORLD);
 
     free_slice(&primes);
-
+    free_slice(&counts);
+    free(displs);
+    free(steps);
     return all_primes;
 }
 
@@ -143,7 +152,11 @@ int main(int argc, char *argv[]) {
         n = atoi(argv[1]);
     }
 
-    int exit_code = run_task(n, dispatch_jobs, "mpi-task1b", mpi_rank);
+    if (mpi_rank == 0) {
+        int exit_code = run_task(n, dispatch_jobs, "mpi-task1b");
+    } else {
+        receive_job();
+    }
 
     MPI_Finalize();
     return 0;
