@@ -16,3 +16,18 @@ void append_slice(IntSlice *slice, int value);
 
 // Free memory used by Intslice
 void free_slice(IntSlice *slice);
+
+typedef struct {
+    long *arr; // Pointer to an array of ints
+    long len;  // the number of ints in the array
+    long cap;  // the maximum capacity of array
+} LongSlice;
+
+// Returns an LongSlice
+LongSlice make_slice_long(long len, long cap);
+
+// Appends given value to Intslice
+void append_slice_long(LongSlice *slice, long value);
+
+// Free memory used by Intslice
+void free_slice_long(LongSlice *slice);

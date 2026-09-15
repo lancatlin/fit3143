@@ -17,23 +17,22 @@ int mpi_size = 1;
 MPI_Datatype Request;
 
 struct ProcessRequest {
-    int start; // Range includes start number,
-    int end;   // But not end number
+    long start; // Range includes start number,
+    long end;   // But not end number
 };
 
-IntSlice find_primes_sieve(int n) {
+LongSlice find_primes_sieve(long n) {
     // Can only be run serially
     if (n < 2)
-        return make_slice(0, 1);
+        return make_slice_long(0, 1);
 
-    IntSlice is_composite = make_slice(n, n);
-    IntSlice primes = make_slice(0, 100);
+    LongSlice is_composite = make_slice_long(n, n);
+    LongSlice primes = make_slice_long(0, 100);
 
-    int count = 0;
-    int end = ceil(sqrt(n));
+    long count = 0;
+    long end = ceil(sqrt(n));
     for (int i = 2; i < end; i++) {
         if (!is_composite.arr[i]) {
-            append_slice(&primes, i);
             count++;
             for (int j = i * i; j < n; j += i) {
                 is_composite.arr[j] = true;
@@ -41,14 +40,20 @@ IntSlice find_primes_sieve(int n) {
         }
     }
 
-    free_slice(&is_composite);
+    for (int i = 2; i < n; i++) {
+        if (!is_composite.arr[i]) {
+            append_slice_long(&primes, i);
+        }
+    }
+
+    free_slice_long(&is_composite);
 
     return primes;
 }
 
-IntSlice find_primes(struct ProcessRequest req, IntSlice base_primes) {
+LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
     // input validation
-    IntSlice primes = make_slice(0, 100);
+    LongSlice primes = make_slice_long(0, 100);
     if (req.end < 2)
         return primes;
 
@@ -71,13 +76,13 @@ IntSlice find_primes(struct ProcessRequest req, IntSlice base_primes) {
         }
         // append prime to result
         if (is_prime) {
-            append_slice(&primes, i);
+            append_slice_long(&primes, i);
         }
     }
-    printf(
-        "Done: rank: %d start: %d, end: %d, size: %d, primes: %d, scan: %ld\n",
-        mpi_rank, req.start, req.end, req.end - req.start, primes.len,
-        scan_count);
+    printf("Done: rank: %d start: %ld, end: %ld, size: %ld, primes: %ld, scan: "
+           "%ld\n",
+           mpi_rank, req.start, req.end, req.end - req.start, primes.len,
+           scan_count);
 
     return primes;
 }
@@ -87,33 +92,33 @@ void receive_job() {
 
     MPI_Scatter(NULL, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
-    IntSlice base_primes = find_primes_sieve(floor(sqrt(req.end)));
+    LongSlice base_primes = find_primes_sieve(ceil(sqrt(req.end)));
 
-    IntSlice primes = find_primes(req, base_primes);
+    LongSlice primes = find_primes(req, base_primes);
 
-    MPI_Gather(&primes.len, 1, MPI_INT, NULL, 1, MPI_INT, 0, MPI_COMM_WORLD);
-    MPI_Gatherv(primes.arr, primes.len, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
+    MPI_Gather(&primes.len, 1, MPI_LONG, NULL, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(primes.arr, primes.len, MPI_LONG, NULL, NULL, NULL, MPI_LONG, 0,
                 MPI_COMM_WORLD);
-    free_slice(&base_primes);
-    free_slice(&primes);
+    free_slice_long(&base_primes);
+    free_slice_long(&primes);
 }
 
 // find all primes up to but not including n
-IntSlice dispatch_jobs(int n) {
-    printf("Rank: %d, size: %d\n", mpi_rank, mpi_size);
+LongSlice dispatch_jobs(long n) {
+    printf("Rank: %d, size: %d, N: %ld\n", mpi_rank, mpi_size, n);
     struct ProcessRequest *send_data = (struct ProcessRequest *)malloc(
         sizeof(struct ProcessRequest) * mpi_size);
 
     // int base_step = n / mpi_size;
     // int l = n / mpi_size / 8;
     double ratio = (double)n * n / mpi_size / 4;
-    int base = n / 2 / mpi_size;
+    long base = n / 2 / mpi_size;
     printf("ratio: %f\n", ratio);
     for (int i = 0; i < mpi_size; i++) {
         send_data[i].start = floor(sqrt((double)i * ratio)) + i * base;
         send_data[i].end =
             floor(sqrt(((double)i + 1) * ratio)) + (i + 1) * base;
-        printf("senddata[%d].start = %d, step=%d, end = %d\n", i,
+        printf("senddata[%d].start = %ld, step=%ld, end = %ld\n", i,
                send_data[i].start, send_data[i].end - send_data[i].start,
                send_data[i].end);
     }
@@ -124,18 +129,17 @@ IntSlice dispatch_jobs(int n) {
     MPI_Scatter(send_data, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
     // root starts at 0 so can directly use sieve
-    IntSlice primes = find_primes_sieve(req.end);
+    LongSlice primes = find_primes_sieve(req.end);
 
-    IntSlice counts = make_slice(mpi_size, mpi_size);
+    LongSlice counts = make_slice_long(mpi_size, mpi_size);
 
-    MPI_Gather(&primes.len, 1, MPI_INT, counts.arr, 1, MPI_INT, 0,
+    MPI_Gather(&primes.len, 1, MPI_LONG, counts.arr, 1, MPI_LONG, 0,
                MPI_COMM_WORLD);
 
     int *displs = NULL;
     int *steps = NULL;
 
     int sum = 0;
-    IntSlice all_primes = make_slice(0, 0);
     displs = (int *)malloc(sizeof(int) * mpi_size);
     steps = (int *)malloc(sizeof(int) * mpi_size);
     for (int i = 0; i < mpi_size; i++) {
@@ -143,14 +147,13 @@ IntSlice dispatch_jobs(int n) {
         steps[i] = counts.arr[i];
         sum += counts.arr[i];
     }
-    free_slice(&all_primes);
-    all_primes = make_slice(sum, sum);
+    LongSlice all_primes = make_slice_long(sum, sum);
 
-    MPI_Gatherv(primes.arr, primes.len, MPI_INT, all_primes.arr, steps, displs,
-                MPI_INT, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(primes.arr, primes.len, MPI_LONG, all_primes.arr, steps, displs,
+                MPI_LONG, 0, MPI_COMM_WORLD);
 
-    free_slice(&primes);
-    free_slice(&counts);
+    free_slice_long(&primes);
+    free_slice_long(&counts);
     free(displs);
     free(steps);
     return all_primes;
@@ -159,7 +162,7 @@ IntSlice dispatch_jobs(int n) {
 int main(int argc, char *argv[]) {
     struct ProcessRequest req;
 
-    MPI_Datatype type[2] = {MPI_INT, MPI_INT};
+    MPI_Datatype type[2] = {MPI_LONG, MPI_LONG};
     int blocklen[2] = {1, 1};
     MPI_Aint disp[2];
 
@@ -177,10 +180,10 @@ int main(int argc, char *argv[]) {
     MPI_Type_create_struct(2, blocklen, disp, type, &Request);
     MPI_Type_commit(&Request);
 
-    int n = 100;
+    long n = 100;
 
     if (argc >= 2) {
-        n = atoi(argv[1]);
+        n = atol(argv[1]);
     }
 
     if (mpi_rank == 0) {

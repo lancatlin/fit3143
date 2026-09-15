@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int run_task(int n, IntSlice (*func)(int), char *label, int mpi_size) {
+int run_task(long n, LongSlice (*func)(long), char *label, int mpi_size) {
     char *dir_name = "logs";
     // Set output stream to stdout or file
     FILE *f = stdout;
@@ -28,7 +28,7 @@ int run_task(int n, IntSlice (*func)(int), char *label, int mpi_size) {
         }
         char filename[100];
 
-        sprintf(filename, "%s/%s-%d-%d.log", dir_name, label, mpi_size, n);
+        sprintf(filename, "%s/%s-%d-%ld.log", dir_name, label, mpi_size, n);
         f = fopen(filename, "w");
         if (f == NULL) {
             fprintf(stderr, "Cannot open file\n");
@@ -37,25 +37,27 @@ int run_task(int n, IntSlice (*func)(int), char *label, int mpi_size) {
         printf("Output saving to %s\n", filename);
     }
 
-    fprintf(f, "N: %d\n", n);
+    fprintf(f, "N: %ld\n", n);
 
     struct timespec start, end;
     clock_gettime(CLOCK_MONOTONIC, &start);
 
-    IntSlice primes = func(n);
+    LongSlice primes = func(n);
 
     clock_gettime(CLOCK_MONOTONIC, &end);
 
     double elapsed = (end.tv_sec - start.tv_sec);
     elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-    fprintf(f, "Total: %d\n", primes.len);
+    printf("Compute done. Start writing results\n");
+    printf("Compute time: %.4f\n", elapsed);
+    fprintf(f, "Total: %ld\n", primes.len);
     fprintf(f, "Compute time: %.4f\n", elapsed);
 
     for (int i = 0; i < primes.len; i++) {
-        fprintf(f, "%d\n", primes.arr[i]);
+        fprintf(f, "%ld\n", primes.arr[i]);
     }
     fclose(f);
 
-    free_slice(&primes);
+    free_slice_long(&primes);
     return 0;
 }
