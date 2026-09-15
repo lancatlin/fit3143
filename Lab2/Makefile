@@ -3,7 +3,7 @@
 CC=mpicc
 LIBS= -lm -pthread
 .PHONY: all
-all: task1
+all: task1 task2
 
 .PHONY: run
 run: all
@@ -11,6 +11,9 @@ run: all
 
 task1: task1.o slice.o runtask.o
 	$(CC) $^ -o $@ $(LIBS)
+
+task2: task2.o slice.o runtask.o
+	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 %.o: %.c
 	$(CC) -fopenmp -fdump-tree-optimized -g -c $^ -o $@

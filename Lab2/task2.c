@@ -6,6 +6,7 @@
 #include "slice.h"
 #include <math.h>
 #include <mpi/mpi.h>
+#include <omp.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -67,6 +68,7 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
 
     LongSlice is_composite = make_slice_long(size, size);
 
+#pragma omp parallel for schedule(guided)
     for (int i = req.start; i < req.end; i++) {
         int sqroot = floor(sqrt(i));
         for (int j = 0; j < base_primes.len && base_primes.arr[j] <= sqroot;
@@ -134,7 +136,9 @@ LongSlice dispatch_jobs(long n) {
     MPI_Scatter(send_data, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
     // root starts at 0 so can directly use sieve
-    LongSlice primes = find_primes_sieve(req.end);
+    LongSlice base_primes = find_primes_sieve(ceil(sqrt(req.end)));
+
+    LongSlice primes = find_primes(req, base_primes);
 
     LongSlice counts = make_slice_long(mpi_size, mpi_size);
 
@@ -192,7 +196,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (mpi_rank == 0) {
-        int exit_code = run_task(n, dispatch_jobs, "mpi-task1c", mpi_size);
+        int exit_code = run_task(n, dispatch_jobs, "mpi-task2", mpi_size);
     } else {
         receive_job();
     }
