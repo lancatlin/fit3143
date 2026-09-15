@@ -8,6 +8,8 @@ RUN apt-get update && apt-get install -y \
   libprrte-bin \
   libprrte-dev \
   openssh-server \
+  git \
+  vim \
   && rm -rf /var/lib/apt/lists/*
 
 RUN ssh-keygen -A
