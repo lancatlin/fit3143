@@ -8,15 +8,8 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int run_task(int argc, char *argv[], int (*func)(int, IntSlice), char *label,
-             int rank) {
-    int n = 100;
+int run_task(int n, IntSlice (*func)(int), char *label, int rank) {
     char *dir_name = "logs";
-
-    if (argc >= 2) {
-        n = atoi(argv[1]);
-    }
-
     if (rank == 0) {
         // Set output stream to stdout or file
         FILE *f = stdout;
@@ -51,30 +44,24 @@ int run_task(int argc, char *argv[], int (*func)(int, IntSlice), char *label,
         struct timespec start, end;
         clock_gettime(CLOCK_MONOTONIC, &start);
 
-        IntSlice is_primes = make_slice(n, n);
-        int count = func(n, is_primes);
+        IntSlice primes = func(n);
 
         clock_gettime(CLOCK_MONOTONIC, &end);
 
         double elapsed = (end.tv_sec - start.tv_sec);
         elapsed += (end.tv_nsec - start.tv_nsec) / 1000000000.0;
-        fprintf(f, "Total: %d\n", count);
+        fprintf(f, "Total: %d\n", primes.len);
         fprintf(f, "Compute time: %.4f\n", elapsed);
 
-        for (int i = 0; i < is_primes.len; i++) {
-            if (is_primes.arr[i]) {
-                fprintf(f, "%d\n", i);
-            }
+        for (int i = 0; i < primes.len; i++) {
+            fprintf(f, "%d\n", primes.arr[i]);
         }
         fclose(f);
 
-        free_slice(&is_primes);
+        free_slice(&primes);
         return 0;
     } else {
-        IntSlice is_primes = make_slice(n, n);
-        int count = func(n, is_primes);
-
-        free_slice(&is_primes);
+        func(n);
         return 0;
     }
 }
