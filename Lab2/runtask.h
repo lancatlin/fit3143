@@ -3,5 +3,7 @@
 #pragma once
 
 #include "slice.h"
+#include <stdbool.h>
 
-int run_task(long n, LongSlice (*func)(long), char *label, int mpi_size);
+int run_task(long n, LongSlice (*func)(long), char *label, int mpi_size,
+             bool save);

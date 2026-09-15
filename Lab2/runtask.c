@@ -7,11 +7,12 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int run_task(long n, LongSlice (*func)(long), char *label, int mpi_size) {
+int run_task(long n, LongSlice (*func)(long), char *label, int mpi_size,
+             bool save) {
     char *dir_name = "logs";
     // Set output stream to stdout or file
     FILE *f = stdout;
-    if (n > 100) {
+    if (save) {
         // Write output to file if exceeding 100
 
         // Check log directory

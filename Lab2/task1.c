@@ -186,8 +186,14 @@ int main(int argc, char *argv[]) {
         n = atol(argv[1]);
     }
 
+    bool save = false;
+    if (argc >= 3) {
+        save = true;
+    }
+
     if (mpi_rank == 0) {
-        int exit_code = run_task(n, dispatch_jobs, "mpi-task1c", mpi_size);
+        int exit_code =
+            run_task(n, dispatch_jobs, "mpi-task1c", mpi_size, save);
     } else {
         receive_job();
     }
