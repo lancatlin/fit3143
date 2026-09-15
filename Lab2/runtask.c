@@ -7,7 +7,7 @@
 #include <sys/stat.h>
 #include <time.h>
 
-int run_task(int n, IntSlice (*func)(int), char *label) {
+int run_task(int n, IntSlice (*func)(int), char *label, int mpi_size) {
     char *dir_name = "logs";
     // Set output stream to stdout or file
     FILE *f = stdout;
@@ -28,7 +28,7 @@ int run_task(int n, IntSlice (*func)(int), char *label) {
         }
         char filename[100];
 
-        sprintf(filename, "%s/%s-%d.log", dir_name, label, n);
+        sprintf(filename, "%s/%s-%d-%d.log", dir_name, label, mpi_size, n);
         f = fopen(filename, "w");
         if (f == NULL) {
             fprintf(stderr, "Cannot open file\n");

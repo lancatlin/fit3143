@@ -4,4 +4,4 @@
 
 #include "slice.h"
 
-int run_task(int n, IntSlice (*func)(int), char *label);
+int run_task(int n, IntSlice (*func)(int), char *label, int mpi_size);

@@ -21,7 +21,37 @@ struct ProcessRequest {
     int end;   // But not end number
 };
 
-IntSlice find_primes(struct ProcessRequest req) {
+IntSlice find_primes_sieve(int n) {
+    // Can only be run serially
+    if (n < 2)
+        return make_slice(0, 1);
+
+    IntSlice is_composite = make_slice(n, n);
+
+    int count = 0;
+    int end = ceil(sqrt(n));
+    for (int i = 2; i < end; i++) {
+        if (!is_composite.arr[i]) {
+            count++;
+            for (int j = i * i; j < n; j += i) {
+                is_composite.arr[j] = true;
+            }
+        }
+    }
+
+    IntSlice primes = make_slice(0, count);
+    // check_primes(n, &is_primes, &primes);
+    for (int i = 2; i < n; i++) {
+        if (!is_composite.arr[i]) {
+            append_slice(&primes, i);
+        }
+    }
+    free_slice(&is_composite);
+
+    return primes;
+}
+
+IntSlice find_primes(struct ProcessRequest req, IntSlice base_primes) {
     // input validation
     IntSlice primes = make_slice(0, 100);
     if (req.end < 2)
@@ -36,9 +66,10 @@ IntSlice find_primes(struct ProcessRequest req) {
     for (int i = req.start; i < req.end; i++) {
         int sqroot = floor(sqrt(i));
         bool is_prime = true;
-        for (int j = 2; j <= sqroot; j++) {
+        for (int j = 0; j < base_primes.len && base_primes.arr[j] <= sqroot;
+             j++) {
             scan_count++;
-            if (i % j == 0) {
+            if (i % base_primes.arr[j] == 0) {
                 is_prime = false;
                 break;
             }
@@ -61,11 +92,15 @@ void receive_job() {
 
     MPI_Scatter(NULL, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
-    IntSlice primes = find_primes(req);
+    IntSlice base_primes = find_primes_sieve(floor(sqrt(req.end)));
+
+    IntSlice primes = find_primes(req, base_primes);
 
     MPI_Gather(&primes.len, 1, MPI_INT, NULL, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Gatherv(primes.arr, primes.len, MPI_INT, NULL, NULL, NULL, MPI_INT, 0,
                 MPI_COMM_WORLD);
+    free_slice(&base_primes);
+    free_slice(&primes);
 }
 
 // find all primes up to but not including n
@@ -93,7 +128,8 @@ IntSlice dispatch_jobs(int n) {
 
     MPI_Scatter(send_data, 1, Request, &req, 1, Request, 0, MPI_COMM_WORLD);
 
-    IntSlice primes = find_primes(req);
+    // root starts at 0 so can directly use sieve
+    IntSlice primes = find_primes_sieve(req.end);
 
     IntSlice counts = make_slice(mpi_size, mpi_size);
 
@@ -153,7 +189,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (mpi_rank == 0) {
-        int exit_code = run_task(n, dispatch_jobs, "mpi-task1b");
+        int exit_code = run_task(n, dispatch_jobs, "mpi-task1c", mpi_size);
     } else {
         receive_job();
     }
