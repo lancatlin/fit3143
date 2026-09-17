@@ -62,7 +62,6 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
         req.start = 2;
     }
     // prime finding algorithm
-    long scan_count = 0;
 
     long size = req.end - req.start;
 
@@ -73,17 +72,14 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
         int sqroot = floor(sqrt(i));
         for (int j = 0; j < base_primes.len && base_primes.arr[j] <= sqroot;
              j++) {
-            scan_count++;
             if (i % base_primes.arr[j] == 0) {
                 is_composite.arr[i - req.start] = true;
                 break;
             }
         }
     }
-    printf("Done: rank: %d start: %ld, end: %ld, size: %ld, primes: %ld, scan: "
-           "%ld\n",
-           mpi_rank, req.start, req.end, req.end - req.start, primes.len,
-           scan_count);
+    printf("Done: rank: %d start: %ld, end: %ld, size: %ld, primes: %ld\n",
+           mpi_rank, req.start, req.end, req.end - req.start, primes.len);
 
     for (long i = 0; i < size; i++) {
         if (!is_composite.arr[i]) {

@@ -95,8 +95,7 @@ void receive_job() {
     LongSlice base_primes = find_primes_sieve(ceil(sqrt(req.end)));
 
     LongSlice primes = find_primes(req, base_primes);
-
-    MPI_Gather(&primes.len, 1, MPI_LONG, NULL, 1, MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Gather(&primes.len, 1, MPI_INT, NULL, 1, MPI_INT, 0, MPI_COMM_WORLD);
     MPI_Gatherv(primes.arr, primes.len, MPI_LONG, NULL, NULL, NULL, MPI_LONG, 0,
                 MPI_COMM_WORLD);
     free_slice_long(&base_primes);
@@ -131,31 +130,25 @@ LongSlice dispatch_jobs(long n) {
     // root starts at 0 so can directly use sieve
     LongSlice primes = find_primes_sieve(req.end);
 
-    LongSlice counts = make_slice_long(mpi_size, mpi_size);
+    IntSlice counts = make_slice(mpi_size, mpi_size);
 
-    MPI_Gather(&primes.len, 1, MPI_LONG, counts.arr, 1, MPI_LONG, 0,
+    MPI_Gather(&primes.len, 1, MPI_INT, counts.arr, 1, MPI_INT, 0,
                MPI_COMM_WORLD);
 
-    int *displs = NULL;
-    int *steps = NULL;
-
     int sum = 0;
-    displs = (int *)malloc(sizeof(int) * mpi_size);
-    steps = (int *)malloc(sizeof(int) * mpi_size);
+    IntSlice displs = make_slice(mpi_size, mpi_size);
     for (int i = 0; i < mpi_size; i++) {
-        displs[i] = sum;
-        steps[i] = counts.arr[i];
+        displs.arr[i] = sum;
         sum += counts.arr[i];
     }
     LongSlice all_primes = make_slice_long(sum, sum);
 
-    MPI_Gatherv(primes.arr, primes.len, MPI_LONG, all_primes.arr, steps, displs,
-                MPI_LONG, 0, MPI_COMM_WORLD);
+    MPI_Gatherv(primes.arr, primes.len, MPI_LONG, all_primes.arr, counts.arr,
+                displs.arr, MPI_LONG, 0, MPI_COMM_WORLD);
 
     free_slice_long(&primes);
-    free_slice_long(&counts);
-    free(displs);
-    free(steps);
+    free_slice(&counts);
+    free_slice(&displs);
     return all_primes;
 }
 

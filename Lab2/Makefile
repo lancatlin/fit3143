@@ -3,7 +3,7 @@
 CC=mpicc
 LIBS= -lm -pthread
 .PHONY: all
-all: task1 task2
+all: task1 task2 prime_growth
 
 .PHONY: run
 run: all
@@ -15,5 +15,8 @@ task1: task1.o slice.o runtask.o
 task2: task2.o slice.o runtask.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
+prime_growth: prime_growth.o slice.o
+	$(CC) -fopenmp $^ -o $@ $(LIBS)
+
 %.o: %.c
-	$(CC) -fopenmp -fdump-tree-optimized -g -c $^ -o $@
+	$(CC) -fopenmp -g -c $^ -o $@
