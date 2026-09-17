@@ -65,7 +65,7 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
 
     long size = req.end - req.start;
 
-    LongSlice is_composite = make_slice_long(size, size);
+    bool *is_composite = (bool *)malloc(sizeof(bool) * size);
 
 #pragma omp parallel for schedule(guided)
     for (int i = req.start; i < req.end; i++) {
@@ -73,7 +73,7 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
         for (int j = 0; j < base_primes.len && base_primes.arr[j] <= sqroot;
              j++) {
             if (i % base_primes.arr[j] == 0) {
-                is_composite.arr[i - req.start] = true;
+                is_composite[i - req.start] = true;
                 break;
             }
         }
@@ -82,10 +82,13 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
            mpi_rank, req.start, req.end, req.end - req.start, primes.len);
 
     for (long i = 0; i < size; i++) {
-        if (!is_composite.arr[i]) {
+        if (!is_composite[i]) {
             append_slice_long(&primes, i + req.start);
         }
     }
+
+    free(is_composite);
+    is_composite = NULL;
 
     return primes;
 }
