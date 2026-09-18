@@ -179,9 +179,9 @@ int main(int argc, char *argv[]) {
         n = atol(argv[1]);
     }
 
-    bool save = false;
+    bool save = true;
     if (argc >= 3) {
-        save = true;
+        save = false;
     }
 
     if (mpi_rank == 0) {

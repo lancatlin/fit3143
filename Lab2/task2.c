@@ -1,7 +1,7 @@
 // Justin Lin       35808217    hlin0094@student.monash.edu
 // Clement Angelo   35664614    cang0028@student.monash.edu
 // Compile by running `make`
-// Execute by `./task1`
+// Execute by `./task2`
 #include "runtask.h"
 #include "slice.h"
 #include <math.h>
@@ -68,8 +68,11 @@ LongSlice find_primes(struct ProcessRequest req, LongSlice base_primes) {
     bool *is_composite = (bool *)malloc(sizeof(bool) * size);
 
 #pragma omp parallel for schedule(guided)
-    for (int i = req.start; i < req.end; i++) {
+    for (long i = req.start; i < req.end; i++) {
         int sqroot = floor(sqrt(i));
+        // int id = omp_get_thread_num();
+        // int num = omp_get_num_threads();
+        // printf("rank %d. %d/%d: process %ld\n", mpi_rank, id, num, i);
         for (int j = 0; j < base_primes.len && base_primes.arr[j] <= sqroot;
              j++) {
             if (i % base_primes.arr[j] == 0) {
@@ -194,9 +197,9 @@ int main(int argc, char *argv[]) {
         n = atol(argv[1]);
     }
 
-    bool save = false;
+    bool save = true;
     if (argc >= 3) {
-        save = true;
+        save = false;
     }
 
     if (mpi_rank == 0) {
