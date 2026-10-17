@@ -1,7 +1,7 @@
 # Justin Lin       35808217    hlin0094@student.monash.edu
 # Clement Angelo   35664614    cang0028@student.monash.edu
-CC=mpicc
-LIBS= -lm
+CC=gcc
+LIBS= -lm -lpthread
 .PHONY: all
 all: main test
 
@@ -13,7 +13,7 @@ run: all
 run-test: test
 	./test
 
-main: main.o charging_node.o charging_port.o
+main: main.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 test: test.o charging_node.o charging_port.o random_generator.o

@@ -8,11 +8,11 @@
     "build": {
       "command": "make",
       "args": ["-j8"],
-      "cwd": "$ZED_WORKTREE_ROOT/Lab2",
+      "cwd": "$ZED_WORKTREE_ROOT/Lab3"
     },
-    "program": "$ZED_WORKTREE_ROOT/Lab2/task1",
-    "args": ["100"],
+    "program": "$ZED_WORKTREE_ROOT/Lab3/test",
+    "args": [],
     "request": "launch",
-    "adapter": "CodeLLDB",
-  },
+    "adapter": "CodeLLDB"
+  }
 ]

@@ -1,7 +1,9 @@
 #include "charging_node.h"
+#include "charging_port.h"
 #include "random_generator.h"
 #include <assert.h>
 #include <stdio.h>
+#include <unistd.h>
 
 int test_create_charging_node() {
     ChargingNode node = create_charging_node(1, 3);
@@ -25,10 +27,23 @@ int test_generate_random_number() {
     return 0;
 }
 
+int test_start_port() {
+    ChargingPort port = create_charging_port(0);
+    RandomGenerator generator = create_random_generator(1, 0, 1, 3);
+    pthread_t thread_id = start_port(&port, &generator);
+    assert(port.running);
+
+    sleep(10);
+
+    stop_port(&port, thread_id);
+    assert(!port.running);
+    return 0;
+}
+
 int main() {
     int (*test_cases[])() = {test_create_charging_node,
-                             test_generate_random_number};
-    int len = 2;
+                             test_generate_random_number, test_start_port};
+    int len = 3;
 
     for (int i = 0; i < len; i++) {
         int result = test_cases[i]();
