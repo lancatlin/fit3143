@@ -32,7 +32,7 @@ int run_node(ChargingNode* node, int duration) {
         return -1;
     }
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 1, 10);
+        generators[i] = create_random_generator(i, seed, 1000000, 10000000);
         start_port(&node->ports[i], &generators[i], &sem);
     }
     printf("Node %d started\n", node->id);

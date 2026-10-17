@@ -28,7 +28,7 @@ void* _start_port(void* args) {
         // printf("Port %d running: Status %b, Seed: %u\n", port->id,
         // port->occupied, generator->seed);
         int interval = next_random_value(generator);
-        sleep(interval);
+        usleep(interval);
         port->occupied = !port->occupied;
         sem_post(sem);
     }
