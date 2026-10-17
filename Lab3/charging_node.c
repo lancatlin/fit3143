@@ -32,14 +32,16 @@ int run_node(ChargingNode* node, int duration) {
         return -1;
     }
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 1000000, 10000000);
+        generators[i] = create_random_generator(i, seed, 500000, 5000000);
         start_port(&node->ports[i], &generators[i], &sem);
     }
     printf("Node %d started\n", node->id);
 
-    for (int i = 0; i < 10; i++) {
+    int availability = available_ports(node);
+    printf("Node %d: available: %d\n", node->id, availability);
+    for (int i = 0; i < 100; i++) {
         sem_wait(&sem);
-        int availability = available_ports(node);
+        availability = available_ports(node);
         printf("Node %d: available: %d\n", node->id, availability);
     }
 

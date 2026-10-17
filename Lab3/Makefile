@@ -14,10 +14,10 @@ run-test: test
 	./test
 
 main: main.o charging_node.o charging_port.o random_generator.o
-	$(CC) -fopenmp $^ -o $@ $(LIBS)
+	$(CC) $^ -o $@ $(LIBS)
 
 test: test.o charging_node.o charging_port.o random_generator.o
-	$(CC) -fopenmp $^ -o $@ $(LIBS)
+	$(CC) $^ -o $@ $(LIBS)
 
 %.o: %.c
-	$(CC) -fopenmp -g -c $^ -o $@
+	$(CC) -g -c $^ -o $@

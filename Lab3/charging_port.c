@@ -1,11 +1,11 @@
 #include "charging_port.h"
 #include "random_generator.h"
-#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
+#define OCCUPIED_RATE 2
 
 ChargingPort create_charging_port(int id) {
     ChargingPort port = {id, 0, false, false};
@@ -28,6 +28,9 @@ void* _start_port(void* args) {
         // printf("Port %d running: Status %b, Seed: %u\n", port->id,
         // port->occupied, generator->seed);
         int interval = next_random_value(generator);
+        if (port->occupied) {
+            interval *= OCCUPIED_RATE;
+        }
         usleep(interval);
         port->occupied = !port->occupied;
         sem_post(sem);
