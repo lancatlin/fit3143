@@ -1,4 +1,5 @@
 #include "charging_node.h"
+#include "random_generator.h"
 #include <assert.h>
 #include <stdio.h>
 
@@ -9,13 +10,25 @@ int test_create_charging_node() {
     assert(node.port_count == 3);
     for (int i = 0; i < node.port_count; i++) {
         assert(node.ports[i].id == i);
+        assert(!node.ports[i].occupied);
+    }
+    return 0;
+}
+
+int test_generate_random_number() {
+    RandomGenerator generator = create_random_generator(1, 0, 10, 50);
+    for (int i = 0; i < 20; i++) {
+        int value = next_random_value(&generator);
+        assert(value >= generator.min && value <= generator.max);
+        // printf("Random %d: %d\n", i, value);
     }
     return 0;
 }
 
 int main() {
-    int (*test_cases[])() = {test_create_charging_node};
-    int len = 1;
+    int (*test_cases[])() = {test_create_charging_node,
+                             test_generate_random_number};
+    int len = 2;
 
     for (int i = 0; i < len; i++) {
         int result = test_cases[i]();
