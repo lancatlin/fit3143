@@ -16,3 +16,5 @@ ChargingPort create_charging_port(int id);
 void start_port(ChargingPort* port, RandomGenerator* generator);
 
 void stop_port(ChargingPort* port);
+
+void join_port(ChargingPort* port);

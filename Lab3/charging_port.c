@@ -29,6 +29,8 @@ void* _start_port(void* args) {
         port->occupied = !port->occupied;
     }
 
+    printf("Port %d shutting down\n", port->id);
+
     free(params);
     return NULL;
 }
@@ -47,5 +49,8 @@ void start_port(ChargingPort* port, RandomGenerator* generator) {
 
 void stop_port(ChargingPort* port) {
     port->running = false;
+}
+
+void join_port(ChargingPort* port) {
     pthread_join(port->thread_id, NULL);
 }

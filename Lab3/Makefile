@@ -7,13 +7,13 @@ all: main test
 
 .PHONY: run
 run: all
-	mpirun -np 4 ./task1
+	mpirun -np 4 ./main
 
 .PHONY: run
 run-test: test
 	./test
 
-main: main.o
+main: main.o charging_node.o charging_port.o random_generator.o
 	$(CC) -fopenmp $^ -o $@ $(LIBS)
 
 test: test.o charging_node.o charging_port.o random_generator.o
