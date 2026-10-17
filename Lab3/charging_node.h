@@ -12,4 +12,6 @@ ChargingNode create_charging_node(int id, int port_count);
 
 void free_charging_node(ChargingNode* node);
 
-void run_node(ChargingNode* node, int duration);
+int run_node(ChargingNode* node, int duration);
+
+int available_ports(ChargingNode* node);
