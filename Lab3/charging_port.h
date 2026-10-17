@@ -6,12 +6,13 @@
 
 typedef struct {
     int id;
+    pthread_t thread_id;
     bool occupied;
     bool running;
 } ChargingPort;
 
 ChargingPort create_charging_port(int id);
 
-pthread_t start_port(ChargingPort* port, RandomGenerator* generator);
+void start_port(ChargingPort* port, RandomGenerator* generator);
 
-void stop_port(ChargingPort* port, pthread_t thread_id);
+void stop_port(ChargingPort* port);

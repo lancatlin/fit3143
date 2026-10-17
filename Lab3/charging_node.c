@@ -16,3 +16,5 @@ void free_charging_node(ChargingNode* node) {
     node->ports = NULL;
     node->port_count = 0;
 }
+
+void run_node(ChargingNode* node) {}

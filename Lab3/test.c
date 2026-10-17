@@ -30,12 +30,12 @@ int test_generate_random_number() {
 int test_start_port() {
     ChargingPort port = create_charging_port(0);
     RandomGenerator generator = create_random_generator(1, 0, 1, 3);
-    pthread_t thread_id = start_port(&port, &generator);
+    start_port(&port, &generator);
     assert(port.running);
 
     sleep(10);
 
-    stop_port(&port, thread_id);
+    stop_port(&port);
     assert(!port.running);
     return 0;
 }

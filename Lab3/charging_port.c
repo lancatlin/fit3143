@@ -7,7 +7,7 @@
 #include <unistd.h>
 
 ChargingPort create_charging_port(int id) {
-    ChargingPort port = {id, false, false};
+    ChargingPort port = {id, 0, false, false};
     return port;
 }
 
@@ -33,21 +33,19 @@ void* _start_port(void* args) {
     return NULL;
 }
 
-pthread_t start_port(ChargingPort* port, RandomGenerator* generator) {
+void start_port(ChargingPort* port, RandomGenerator* generator) {
     port->running = true;
-    pthread_t thread_id;
     struct PThreadParameter* params =
         (struct PThreadParameter*)malloc(sizeof(struct PThreadParameter));
     params->port = port;
     params->generator = generator;
-    int result = pthread_create(&thread_id, NULL, _start_port, params);
+    int result = pthread_create(&port->thread_id, NULL, _start_port, params);
     if (result != 0) {
         perror("Failed to create pthread");
     }
-    return thread_id;
 }
 
-void stop_port(ChargingPort* port, pthread_t thread_id) {
+void stop_port(ChargingPort* port) {
     port->running = false;
-    pthread_join(thread_id, NULL);
+    pthread_join(port->thread_id, NULL);
 }
