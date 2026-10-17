@@ -8,9 +8,9 @@
     "build": {
       "command": "make",
       "args": ["-j8"],
-      "cwd": "$ZED_WORKTREE_ROOT/Lab1",
+      "cwd": "$ZED_WORKTREE_ROOT/Lab2",
     },
-    "program": "$ZED_WORKTREE_ROOT/Lab1/miller_rabin",
+    "program": "$ZED_WORKTREE_ROOT/Lab2/task1",
     "args": ["100"],
     "request": "launch",
     "adapter": "CodeLLDB",
