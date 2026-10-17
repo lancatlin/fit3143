@@ -1,9 +1,10 @@
 #include "random_generator.h"
 #include <stdlib.h>
+#define SEED_MULTIPLIER 11234
 
 RandomGenerator create_random_generator(int id, int seed, int min, int max) {
     RandomGenerator generator = {
-        seed + id,
+        seed * SEED_MULTIPLIER + id,
         min,
         max,
     };

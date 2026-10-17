@@ -1,7 +1,17 @@
 #include "charging_node.h"
+#include <mpi.h>
 
-int main() {
-    ChargingNode node = create_charging_node(0, 9);
-    run_node(&node, 5);
+int main(int argc, char* argv[]) {
+    int mpi_rank;
+    int mpi_size;
+    MPI_Init(&argc, &argv);
+    MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+    ChargingNode node = create_charging_node(mpi_rank, 9);
+    run_node(&node, 10);
+
+    MPI_Finalize();
+
     return 0;
 }
