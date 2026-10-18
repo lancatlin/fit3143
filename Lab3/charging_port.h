@@ -14,7 +14,8 @@ typedef struct {
 
 ChargingPort create_charging_port(int id);
 
-void start_port(ChargingPort* port, RandomGenerator* generator, sem_t* sem);
+void start_port(ChargingPort* port, RandomGenerator* generator,
+                sem_t* on_update, sem_t* new_car);
 
 void stop_port(ChargingPort* port);
 

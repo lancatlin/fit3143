@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
     MPI_Comm comm2D;
     int dims[NDIMS] = {2, 4};
     int coord[NDIMS];
-    int wrap_around[NDIMS] = {0, 0};
+    int wrap_around[NDIMS] = {1, 1};
 
     MPI_Init(&argc, &argv);
     MPI_Comm_size(MPI_COMM_WORLD, &p);
