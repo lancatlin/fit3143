@@ -3,7 +3,7 @@
 CC=mpicc
 LIBS= -lm -lpthread
 .PHONY: all
-all: main test
+all: main
 
 .PHONY: run
 run: all
@@ -13,10 +13,10 @@ run: all
 run-test: test
 	./test
 
-main: main.o charging_node.o charging_port.o random_generator.o
+main: main.o charging_node.o charging_port.o random_generator.o utils.o
 	$(CC) $^ -o $@ $(LIBS)
 
-test: test.o charging_node.o charging_port.o random_generator.o
+test: test.o charging_node.o charging_port.o random_generator.o utils.o
 	$(CC) $^ -o $@ $(LIBS)
 
 %.o: %.c

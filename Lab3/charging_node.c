@@ -1,7 +1,7 @@
 #include "charging_node.h"
 #include "charging_port.h"
 #include "random_generator.h"
-#include <bits/pthreadtypes.h>
+#include "utils.h"
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -66,7 +66,7 @@ int run_node(ChargingNode* node, int duration) {
 
     // start ports
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 2, 5);
+        generators[i] = create_random_generator(i, seed, 3, 8);
         StartPortParameter* params =
             (StartPortParameter*)malloc(sizeof(StartPortParameter));
         params->port = &node->ports[i];
@@ -82,7 +82,7 @@ int run_node(ChargingNode* node, int duration) {
     // listen for changes
     int availability = available_ports(node);
     printf("Node %d: available: %d\n", node->id, availability);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 20; i++) {
         sem_wait(&on_update); // wait for any port status changes
         availability = available_ports(node);
         printf("Node %d: available: %d\n", node->id, availability);
@@ -128,14 +128,7 @@ void* _generate_cars(void* args) {
         create_random_generator(params->node->id, 1000, 1, 3);
 
     while (true) {
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += 1; // next_random_value(&generator);
-        printf("Generator waiting\n");
-        pthread_mutex_lock(params->mutex);
-        int result = pthread_cond_timedwait(params->stop, params->mutex, &ts);
-        pthread_mutex_unlock(params->mutex);
-        if (result == 0) {
-            // stop
+        if (wait_cond_or_sec(params->mutex, params->stop, 1) == 0) {
             break;
         }
         // put a new car

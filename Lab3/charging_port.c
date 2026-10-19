@@ -1,5 +1,6 @@
 #include "charging_port.h"
 #include "random_generator.h"
+#include "utils.h"
 #include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <semaphore.h>
@@ -35,14 +36,9 @@ void* _start_port(void* args) {
         sem_post(on_update);
 
         int interval = next_random_value(generator);
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += interval;
-
-        pthread_mutex_lock(params->mutex);
-        if (pthread_cond_timedwait(params->stop, params->mutex, &ts) == 0) {
-            port->running = false;
+        if (wait_cond_or_sec(params->mutex, params->stop, interval) == 0) {
+            break;
         }
-        pthread_mutex_unlock(params->mutex);
 
         port->occupied = false;
         printf("Port %d released\n", port->id);
