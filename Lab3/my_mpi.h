@@ -8,6 +8,7 @@
 #define SHIFT_ROW 0
 #define SHIFT_COL 1
 #define DISP 1
+#define STATUS_UPDATE_INTERVAL 1
 
 #define TAG_NODE_AVAILABILITY 1
 

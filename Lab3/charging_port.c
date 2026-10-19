@@ -30,7 +30,7 @@ void* _start_port(void* args) {
         if (result != 0) {
             continue;
         }
-        printf("Port %d got a new car\n", port->id);
+        // printf("Port %d got a new car\n", port->id);
         port->occupied = true;
         sem_post(on_update);
 
@@ -45,7 +45,7 @@ void* _start_port(void* args) {
         }
 
         port->occupied = false;
-        printf("Port %d released\n", port->id);
+        // printf("Port %d released\n", port->id);
         sem_post(on_update);
     }
 

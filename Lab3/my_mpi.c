@@ -64,15 +64,17 @@ void* _start_send_queue(void* args) {
     int count = 0;
     int buffer = 0;
     ChargingNode* node = params->node;
-    for (int i = 0; i < 5; i++) {
+    while (true) {
         buffer = available_ports(node);
-        for (int i = 0; i < NBR_COUNT; i++) {
-            if (node->neighbors[i].rank >= 0) {
-                MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,
-                         TAG_NODE_AVAILABILITY, *params->comm2D);
+        if (buffer < AVAILABILITY_BASELINE) {
+            for (int i = 0; i < NBR_COUNT; i++) {
+                if (node->neighbors[i].rank >= 0) {
+                    MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,
+                             TAG_NODE_AVAILABILITY, *params->comm2D);
+                }
             }
         }
-        sleep(1);
+        sleep(STATUS_UPDATE_INTERVAL);
     }
     free(params);
 }

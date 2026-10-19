@@ -8,7 +8,6 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
-#define AVAILABILITY_BASELINE 2
 
 ChargingNode create_charging_node(int id, int port_count) {
     ChargingPort* ports = malloc(sizeof(ChargingPort) * port_count);
@@ -66,7 +65,7 @@ int run_node(ChargingNode* node, int duration) {
 
     // start ports
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 3, 8);
+        generators[i] = create_random_generator(i, seed, 5, 8);
         StartPortParameter* params =
             (StartPortParameter*)malloc(sizeof(StartPortParameter));
         params->port = &node->ports[i];
@@ -82,7 +81,7 @@ int run_node(ChargingNode* node, int duration) {
     // listen for changes
     int availability = available_ports(node);
     printf("Node %d: available: %d\n", node->id, availability);
-    for (int i = 0; i < 10; i++) {
+    for (int i = 0; i < 50; i++) {
         sem_wait(&on_update); // wait for any port status changes
         availability = available_ports(node);
         printf("Node %d: available: %d\n", node->id, availability);
@@ -138,7 +137,7 @@ void* _generate_cars(void* args) {
             break;
         }
         // put a new car
-        printf("Generator post a new car\n");
+        // printf("Generator post a new car\n");
         sem_post(params->new_car);
     }
 
