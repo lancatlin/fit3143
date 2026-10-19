@@ -59,8 +59,8 @@ int main(int argc, char* argv[]) {
         perror("run node error");
     }
 
-    sleep(10);
-
+    // TODO: simulate shutdown
+    sleep(20);
     context_shutdown(&ctx);
 
     pthread_join(node.thread_id, NULL);

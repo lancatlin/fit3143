@@ -30,16 +30,27 @@ void* _start_recv_queue(void* args) {
     RecvQueueParams* params = (RecvQueueParams*)args;
     int count = 0;
     int buffer = 0;
+    MPI_Request request;
     MPI_Status status;
     ChargingNode* node = params->node;
-    while (context_running(params->ctx)) {
-        int ierr = MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
-                            *params->comm2D, &status);
-        if (ierr != 0) {
-            perror("Failed to receive");
-        }
-        int source = status.MPI_SOURCE;
 
+    int ierr = MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                         *params->comm2D, &request);
+    if (ierr != MPI_SUCCESS) {
+        perror("Failed to post receive");
+        return NULL;
+    }
+    while (context_running(params->ctx)) {
+        int done = 0;
+        MPI_Test(&request, &done, &status);
+        if (!done) {
+            if (context_wait(params->ctx, 1) == 0) {
+                break;
+            }
+            continue;
+        }
+
+        int source = status.MPI_SOURCE;
         for (int i = 0; i < NBR_COUNT; i++) {
             if (node->neighbors[i].rank == source) {
                 node->neighbors[i].availability = buffer;
@@ -48,7 +59,13 @@ void* _start_recv_queue(void* args) {
                 break;
             }
         }
+
+        MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                  *params->comm2D, &request);
     }
+    MPI_Cancel(&request);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
+
     free(params);
     return NULL;
 }
