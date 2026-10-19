@@ -82,7 +82,7 @@ int run_node(ChargingNode* node, int duration) {
     // listen for changes
     int availability = available_ports(node);
     printf("Node %d: available: %d\n", node->id, availability);
-    for (int i = 0; i < 20; i++) {
+    for (int i = 0; i < 10; i++) {
         sem_wait(&on_update); // wait for any port status changes
         availability = available_ports(node);
         printf("Node %d: available: %d\n", node->id, availability);
@@ -108,6 +108,12 @@ int run_node(ChargingNode* node, int duration) {
     for (int i = 0; i < node->port_count; i++) {
         join_port(&node->ports[i]);
     }
+
+    // cleanup
+    pthread_mutex_destroy(&mut);
+    pthread_cond_destroy(&stop);
+    sem_destroy(&on_update);
+    sem_destroy(&new_car);
     return 0;
 }
 
