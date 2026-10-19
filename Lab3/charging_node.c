@@ -74,7 +74,8 @@ void* _run_node(void* args) {
 
     // start ports
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 5, 8);
+        generators[i] =
+            create_random_generator(i, seed, 5 * SECOND, 8 * SECOND);
         StartPortParameter* params =
             (StartPortParameter*)malloc(sizeof(StartPortParameter));
         params->port = &node->ports[i];
@@ -132,8 +133,8 @@ int available_ports(ChargingNode* node) {
 void* _generate_cars(void* args) {
     struct GenerateCarsParams* params = (struct GenerateCarsParams*)args;
     struct timespec ts;
-    RandomGenerator generator =
-        create_random_generator(params->node->id, 1000, 1, 3);
+    RandomGenerator generator = create_random_generator(
+        params->node->id, 1000, 0.5 * SECOND, 3 * SECOND);
 
     while (true) {
         int interval = next_random_value(&generator);

@@ -1,7 +1,6 @@
 #include "charging_node.h"
 #include "context.h"
 #include "my_mpi.h"
-#include <bits/pthreadtypes.h>
 #include <mpi.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -17,6 +16,12 @@ int main(int argc, char* argv[]) {
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+
+    if (mpi_size != 8) {
+        perror("MPI size is not 8, exiting...");
+        MPI_Finalize();
+        return -1;
+    }
 
     MPI_Dims_create(mpi_size, NDIMS, dims);
     if (mpi_rank == 0) {

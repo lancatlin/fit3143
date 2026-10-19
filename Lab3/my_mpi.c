@@ -44,7 +44,7 @@ void* _start_recv_queue(void* args) {
         int done = 0;
         MPI_Test(&request, &done, &status);
         if (!done) {
-            if (context_wait(params->ctx, 1) == 0) {
+            if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
                 break;
             }
             continue;

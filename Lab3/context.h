@@ -4,6 +4,8 @@
 #include <stdatomic.h>
 #include <stdbool.h>
 
+#define SECOND 1000
+
 typedef struct {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
@@ -16,6 +18,7 @@ int context_shutdown(Context* ctx);
 
 bool context_running(Context* ctx);
 
-int context_wait(Context* ctx, int duration);
+// Waits up to msec milliseconds. Returns 0 if the context is stopped.
+int context_wait(Context* ctx, int msec);
 
 void context_destroy(Context* ctx);

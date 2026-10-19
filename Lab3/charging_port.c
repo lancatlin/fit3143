@@ -37,7 +37,7 @@ void* _start_port(void* args) {
 
         // wait for timeout
         int interval = next_random_value(generator);
-        if (context_wait(params->ctx, interval) == 0) {
+        if (context_wait(params->ctx, interval * 1000) == 0) {
             break;
         }
 
