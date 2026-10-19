@@ -1,5 +1,6 @@
 #pragma once
 
+#include "context.h"
 #include "random_generator.h"
 #include <pthread.h>
 #include <semaphore.h>
@@ -19,8 +20,7 @@ typedef struct {
     RandomGenerator* generator;
     sem_t* on_update;
     sem_t* new_car;
-    pthread_mutex_t* mutex;
-    pthread_cond_t* stop;
+    Context* ctx;
 } StartPortParameter;
 
 int start_port(StartPortParameter* params);

@@ -1,6 +1,7 @@
 #pragma once
 
 #include "charging_port.h"
+#include "context.h"
 
 #define NBR_COUNT 4
 #define UP 0
@@ -25,6 +26,6 @@ ChargingNode create_charging_node(int id, int port_count);
 
 void free_charging_node(ChargingNode* node);
 
-int run_node(ChargingNode* node, int duration);
+int run_node(ChargingNode* node, Context* ctx);
 
 int available_ports(ChargingNode* node);

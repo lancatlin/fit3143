@@ -1,4 +1,5 @@
 #include "charging_node.h"
+#include "context.h"
 #include "my_mpi.h"
 #include <mpi.h>
 #include <stdio.h>
@@ -26,6 +27,10 @@ int main(int argc, char* argv[]) {
     if (ierr != 0) {
         perror("Failed to create cartesion");
     }
+
+    Context ctx;
+    context_init(&ctx);
+
     ChargingNode node = create_charging_node(mpi_rank, 9);
     set_neighbours(&node, &comm2D);
 
@@ -40,12 +45,13 @@ int main(int argc, char* argv[]) {
     send_params->comm2D = &comm2D;
     start_send_queue(send_params);
 
-    int result = run_node(&node, 10);
+    int result = run_node(&node, &ctx);
     if (result != 0) {
         perror("run node error");
     }
 
     MPI_Finalize();
+    context_destroy(&ctx);
 
     return 0;
 }

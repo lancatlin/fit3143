@@ -1,7 +1,7 @@
 #include "charging_node.h"
 #include "charging_port.h"
+#include "context.h"
 #include "random_generator.h"
-#include "utils.h"
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -27,28 +27,27 @@ void free_charging_node(ChargingNode* node) {
 struct GenerateCarsParams {
     ChargingNode* node;
     sem_t* new_car;
-    pthread_mutex_t* mutex;
-    pthread_cond_t* stop;
+    Context* ctx;
 };
 
 void* _generate_cars(void* args);
 
-int run_node(ChargingNode* node, int duration) {
+int run_node(ChargingNode* node, Context* ctx) {
     RandomGenerator* generators =
         malloc(sizeof(RandomGenerator) * node->port_count);
     int seed = node->id;
     sem_t on_update, new_car;
-    pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-    pthread_cond_t stop = PTHREAD_COND_INITIALIZER;
+    // pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
+    // pthread_cond_t stop = PTHREAD_COND_INITIALIZER;
     pthread_t generator_id;
 
-    int result = sem_init(&on_update, 1, 0);
-    if (result != 0) {
+    int ierr = sem_init(&on_update, 1, 0);
+    if (ierr != 0) {
         perror("Failed to create on_update semaphore");
         return -1;
     }
-    result = sem_init(&new_car, 1, 0);
-    if (result != 0) {
+    ierr = sem_init(&new_car, 1, 0);
+    if (ierr != 0) {
         perror("Failed to create new_car semaphore");
         return -1;
     }
@@ -58,8 +57,7 @@ int run_node(ChargingNode* node, int duration) {
         (struct GenerateCarsParams*)malloc(sizeof(struct GenerateCarsParams));
     params->node = node;
     params->new_car = &new_car;
-    params->mutex = &mut;
-    params->stop = &stop;
+    params->ctx = ctx;
 
     pthread_create(&generator_id, NULL, _generate_cars, params);
 
@@ -72,8 +70,7 @@ int run_node(ChargingNode* node, int duration) {
         params->generator = &generators[i];
         params->on_update = &on_update;
         params->new_car = &new_car;
-        params->mutex = &mut;
-        params->stop = &stop;
+        params->ctx = ctx;
         start_port(params);
     }
     printf("Node %d started\n", node->id);
@@ -97,9 +94,7 @@ int run_node(ChargingNode* node, int duration) {
         stop_port(&node->ports[i]);
     }
     // Send stop signal
-    pthread_mutex_lock(&mut);
-    pthread_cond_broadcast(&stop);
-    pthread_mutex_unlock(&mut);
+    context_shutdown(ctx);
 
     pthread_join(generator_id, NULL);
 
@@ -109,8 +104,6 @@ int run_node(ChargingNode* node, int duration) {
     }
 
     // cleanup
-    pthread_mutex_destroy(&mut);
-    pthread_cond_destroy(&stop);
     sem_destroy(&on_update);
     sem_destroy(&new_car);
     return 0;
@@ -133,7 +126,7 @@ void* _generate_cars(void* args) {
         create_random_generator(params->node->id, 1000, 1, 3);
 
     while (true) {
-        if (wait_cond_or_sec(params->mutex, params->stop, 1) == 0) {
+        if (context_wait(params->ctx, 1) == 0) {
             break;
         }
         // put a new car
