@@ -11,7 +11,7 @@
 #define POLL_TIMEOUT 1
 
 ChargingPort create_charging_port(int id) {
-    ChargingPort port = {id, 0, false, false};
+    ChargingPort port = {id, 0, false};
     return port;
 }
 
@@ -53,7 +53,6 @@ void* _start_port(void* args) {
 }
 
 int start_port(StartPortParameter* params) {
-    params->port->running = true;
     int result =
         pthread_create(&params->port->thread_id, NULL, _start_port, params);
     if (result != 0) {
@@ -61,10 +60,6 @@ int start_port(StartPortParameter* params) {
         return -1;
     }
     return 0;
-}
-
-void stop_port(ChargingPort* port) {
-    port->running = false;
 }
 
 void join_port(ChargingPort* port) {
