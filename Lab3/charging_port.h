@@ -14,9 +14,16 @@ typedef struct {
 
 ChargingPort create_charging_port(int id);
 
-void start_port(ChargingPort* port, RandomGenerator* generator,
-                sem_t* on_update, sem_t* new_car, pthread_mutex_t* mutex,
-                pthread_cond_t* stop);
+typedef struct {
+    ChargingPort* port;
+    RandomGenerator* generator;
+    sem_t* on_update;
+    sem_t* new_car;
+    pthread_mutex_t* mutex;
+    pthread_cond_t* stop;
+} StartPortParameter;
+
+int start_port(StartPortParameter* params);
 
 void stop_port(ChargingPort* port);
 

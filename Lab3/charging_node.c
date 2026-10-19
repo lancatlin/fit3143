@@ -67,8 +67,15 @@ int run_node(ChargingNode* node, int duration) {
     // start ports
     for (int i = 0; i < node->port_count; i++) {
         generators[i] = create_random_generator(i, seed, 2, 5);
-        start_port(&node->ports[i], &generators[i], &on_update, &new_car, &mut,
-                   &stop);
+        StartPortParameter* params =
+            (StartPortParameter*)malloc(sizeof(StartPortParameter));
+        params->port = &node->ports[i];
+        params->generator = &generators[i];
+        params->on_update = &on_update;
+        params->new_car = &new_car;
+        params->mutex = &mut;
+        params->stop = &stop;
+        start_port(params);
     }
     printf("Node %d started\n", node->id);
 
