@@ -8,7 +8,7 @@
 #define DOWN 1
 #define LEFT 2
 #define RIGHT 3
-#define AVAILABILITY_BASELINE 4
+#define AVAILABILITY_BASELINE 2
 
 typedef struct {
     int rank;

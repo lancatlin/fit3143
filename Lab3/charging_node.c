@@ -93,11 +93,11 @@ void* _run_node(void* args) {
     while (context_running(ctx)) {
         if (sem_trywait(&on_update) == 0) {
             availability = available_ports(node);
-            printf("Node %d: available: %d\n", node->id, availability);
-            if (availability < AVAILABILITY_BASELINE) {
-                printf("Node %d: low availability: %d\n", node->id,
-                       availability);
-            }
+            // printf("Node %d: available: %d\n", node->id, availability);
+            // if (availability < AVAILABILITY_BASELINE) {
+            //     printf("Node %d: low availability: %d\n", node->id,
+            //            availability);
+            // }
         }
         if (context_wait(ctx, 1) == 0) {
             break;
@@ -135,6 +135,7 @@ void* _generate_cars(void* args) {
     struct timespec ts;
     RandomGenerator generator = create_random_generator(
         params->node->id, 1000, 0.5 * SECOND, 3 * SECOND);
+    ChargingNode* node = params->node;
 
     while (true) {
         int interval = next_random_value(&generator);
@@ -143,7 +144,24 @@ void* _generate_cars(void* args) {
         }
         // put a new car
         // printf("Generator post a new car\n");
-        sem_post(params->new_car);
+        int availability = available_ports(params->node);
+        if (availability > AVAILABILITY_BASELINE) {
+            printf("Node %d: accepted new car. available: %d\n", node->id,
+                   availability - 1);
+            sem_post(params->new_car);
+        } else {
+            for (int i = 0; i < NBR_COUNT; i++) {
+                if (node->neighbors[i].availability > AVAILABILITY_BASELINE &&
+                    node->neighbors[i].rank > 0) {
+                    printf(
+                        "Node %d is low availability %d: please go to Node %d "
+                        "(%d free)\n",
+                        node->id, availability, node->neighbors[i].rank,
+                        node->neighbors[i].availability);
+                    break;
+                }
+            }
+        }
     }
 
     printf("Generator stopped\n");

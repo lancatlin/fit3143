@@ -54,8 +54,8 @@ void* _start_recv_queue(void* args) {
         for (int i = 0; i < NBR_COUNT; i++) {
             if (node->neighbors[i].rank == source) {
                 node->neighbors[i].availability = buffer;
-                printf("Node %d: Updated from %d: %d\n", node->id, source,
-                       buffer);
+                // printf("Node %d: Updated from %d: %d\n", node->id, source,
+                //        buffer);
                 break;
             }
         }
@@ -85,8 +85,9 @@ void* _start_send_queue(void* args) {
     int buffer = 0;
     ChargingNode* node = params->node;
     while (context_running(params->ctx)) {
-        buffer = available_ports(node);
-        if (buffer < AVAILABILITY_BASELINE) {
+        int availability = available_ports(node);
+        if (buffer != availability) {
+            buffer = availability;
             for (int i = 0; i < NBR_COUNT; i++) {
                 if (node->neighbors[i].rank >= 0) {
                     MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,

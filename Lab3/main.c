@@ -75,5 +75,7 @@ int main(int argc, char* argv[]) {
     MPI_Finalize();
     context_destroy(&ctx);
 
+    printf("Node %d: exited\n", node.id);
+
     return 0;
 }
