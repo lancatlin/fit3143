@@ -27,6 +27,6 @@ typedef struct {
     Context* ctx;
 } SendQueueParams;
 
-void start_recv_queue(RecvQueueParams* params);
+pthread_t start_recv_queue(RecvQueueParams* params);
 
-void start_send_queue(SendQueueParams* params);
+pthread_t start_send_queue(SendQueueParams* params);

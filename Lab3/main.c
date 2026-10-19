@@ -1,7 +1,9 @@
 #include "charging_node.h"
 #include "context.h"
 #include "my_mpi.h"
+#include <bits/pthreadtypes.h>
 #include <mpi.h>
+#include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -40,14 +42,14 @@ int main(int argc, char* argv[]) {
     recv_params->node = &node;
     recv_params->comm2D = &comm2D;
     recv_params->ctx = &ctx;
-    start_recv_queue(recv_params);
+    pthread_t recv_id = start_recv_queue(recv_params);
 
     SendQueueParams* send_params =
         (SendQueueParams*)malloc(sizeof(SendQueueParams));
     send_params->node = &node;
     send_params->comm2D = &comm2D;
     send_params->ctx = &ctx;
-    start_send_queue(send_params);
+    pthread_t send_id = start_send_queue(send_params);
 
     RunNodeParams* node_params = (RunNodeParams*)malloc(sizeof(RunNodeParams));
     node_params->node = &node;
@@ -60,6 +62,10 @@ int main(int argc, char* argv[]) {
     sleep(10);
 
     context_shutdown(&ctx);
+
+    pthread_join(node.thread_id, NULL);
+    pthread_join(recv_id, NULL);
+    pthread_join(send_id, NULL);
 
     MPI_Finalize();
     context_destroy(&ctx);

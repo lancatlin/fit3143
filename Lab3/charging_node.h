@@ -18,6 +18,7 @@ typedef struct {
 typedef struct {
     int id;
     int port_count;
+    pthread_t thread_id;
     ChargingPort* ports;
     Neighbour neighbors[NBR_COUNT];
 } ChargingNode;

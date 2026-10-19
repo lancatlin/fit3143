@@ -53,12 +53,13 @@ void* _start_recv_queue(void* args) {
     return NULL;
 }
 
-void start_recv_queue(RecvQueueParams* params) {
+pthread_t start_recv_queue(RecvQueueParams* params) {
     pthread_t thread_id;
     int ierr = pthread_create(&thread_id, NULL, _start_recv_queue, params);
     if (ierr != 0) {
         perror("Failed to create thread for recv queue");
     }
+    return thread_id;
 }
 
 void* _start_send_queue(void* args) {
@@ -84,10 +85,11 @@ void* _start_send_queue(void* args) {
     return NULL;
 }
 
-void start_send_queue(SendQueueParams* params) {
+pthread_t start_send_queue(SendQueueParams* params) {
     pthread_t thread_id;
     int ierr = pthread_create(&thread_id, NULL, _start_send_queue, params);
     if (ierr != 0) {
         perror("Failed to create thread for send queue");
     }
+    return thread_id;
 }

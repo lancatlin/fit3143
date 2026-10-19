@@ -14,7 +14,10 @@ ChargingNode create_charging_node(int id, int port_count) {
     for (int i = 0; i < port_count; i++) {
         ports[i] = create_charging_port((1 + id) * 100 + i);
     }
-    ChargingNode node = {id, port_count, ports};
+    ChargingNode node;
+    node.id = id;
+    node.port_count = port_count;
+    node.ports = ports;
     return node;
 }
 
@@ -35,8 +38,7 @@ void* _generate_cars(void* args);
 void* _run_node(void* args);
 
 int run_node(RunNodeParams* params) {
-    pthread_t tid;
-    pthread_create(&tid, NULL, _run_node, params);
+    pthread_create(&params->node->thread_id, NULL, _run_node, params);
     return 0;
 }
 
@@ -88,11 +90,16 @@ void* _run_node(void* args) {
     int availability = available_ports(node);
     printf("Node %d: available: %d\n", node->id, availability);
     while (context_running(ctx)) {
-        sem_wait(&on_update); // wait for any port status changes
-        availability = available_ports(node);
-        printf("Node %d: available: %d\n", node->id, availability);
-        if (availability < AVAILABILITY_BASELINE) {
-            printf("Node %d: low availability: %d\n", node->id, availability);
+        if (sem_trywait(&on_update) == 0) {
+            availability = available_ports(node);
+            printf("Node %d: available: %d\n", node->id, availability);
+            if (availability < AVAILABILITY_BASELINE) {
+                printf("Node %d: low availability: %d\n", node->id,
+                       availability);
+            }
+        }
+        if (context_wait(ctx, 1) == 0) {
+            break;
         }
     }
 
@@ -129,7 +136,8 @@ void* _generate_cars(void* args) {
         create_random_generator(params->node->id, 1000, 1, 3);
 
     while (true) {
-        if (context_wait(params->ctx, 1) == 0) {
+        int interval = next_random_value(&generator);
+        if (context_wait(params->ctx, interval) == 0) {
             break;
         }
         // put a new car
