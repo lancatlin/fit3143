@@ -1,6 +1,7 @@
 #pragma once
 
 #include "charging_node.h"
+#include "context.h"
 #include <mpi.h>
 #include <pthread.h>
 
@@ -17,15 +18,13 @@ void set_neighbours(ChargingNode* node, MPI_Comm* comm2D);
 typedef struct {
     ChargingNode* node;
     MPI_Comm* comm2D;
-    // pthread_mutex_t* mutex;
-    // pthread_cond_t* stop;
+    Context* ctx;
 } RecvQueueParams;
 
 typedef struct {
     ChargingNode* node;
     MPI_Comm* comm2D;
-    // pthread_mutex_t* mutex;
-    // pthread_cond_t* stop;
+    Context* ctx;
 } SendQueueParams;
 
 void start_recv_queue(RecvQueueParams* params);

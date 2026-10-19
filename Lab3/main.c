@@ -35,15 +35,18 @@ int main(int argc, char* argv[]) {
     ChargingNode node = create_charging_node(mpi_rank, 9);
     set_neighbours(&node, &comm2D);
 
-    RecvQueueParams* params = (RecvQueueParams*)malloc(sizeof(RecvQueueParams));
-    params->node = &node;
-    params->comm2D = &comm2D;
-    start_recv_queue(params);
+    RecvQueueParams* recv_params =
+        (RecvQueueParams*)malloc(sizeof(RecvQueueParams));
+    recv_params->node = &node;
+    recv_params->comm2D = &comm2D;
+    recv_params->ctx = &ctx;
+    start_recv_queue(recv_params);
 
     SendQueueParams* send_params =
         (SendQueueParams*)malloc(sizeof(SendQueueParams));
     send_params->node = &node;
     send_params->comm2D = &comm2D;
+    send_params->ctx = &ctx;
     start_send_queue(send_params);
 
     RunNodeParams* node_params = (RunNodeParams*)malloc(sizeof(RunNodeParams));

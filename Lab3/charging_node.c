@@ -49,8 +49,6 @@ void* _run_node(void* args) {
         malloc(sizeof(RandomGenerator) * node->port_count);
     int seed = node->id;
     sem_t on_update, new_car;
-    // pthread_mutex_t mut = PTHREAD_MUTEX_INITIALIZER;
-    // pthread_cond_t stop = PTHREAD_COND_INITIALIZER;
     pthread_t generator_id;
 
     int ierr = sem_init(&on_update, 1, 0);
@@ -99,13 +97,6 @@ void* _run_node(void* args) {
     }
 
     printf("Node %d shutting down\n", node->id);
-
-    // Send stop signal to all ports
-    // for (int i = 0; i < node->port_count; i++) {
-    //     stop_port(&node->ports[i]);
-    // }
-    // Send stop signal
-    // context_shutdown(ctx);
 
     pthread_join(generator_id, NULL);
 

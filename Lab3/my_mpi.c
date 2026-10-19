@@ -1,5 +1,6 @@
 #include "my_mpi.h"
 #include "charging_node.h"
+#include "context.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -31,7 +32,7 @@ void* _start_recv_queue(void* args) {
     int buffer = 0;
     MPI_Status status;
     ChargingNode* node = params->node;
-    while (true) {
+    while (context_running(params->ctx)) {
         int ierr = MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                             *params->comm2D, &status);
         if (ierr != 0) {
@@ -49,6 +50,7 @@ void* _start_recv_queue(void* args) {
         }
     }
     free(params);
+    return NULL;
 }
 
 void start_recv_queue(RecvQueueParams* params) {
@@ -64,7 +66,7 @@ void* _start_send_queue(void* args) {
     int count = 0;
     int buffer = 0;
     ChargingNode* node = params->node;
-    while (true) {
+    while (context_running(params->ctx)) {
         buffer = available_ports(node);
         if (buffer < AVAILABILITY_BASELINE) {
             for (int i = 0; i < NBR_COUNT; i++) {
@@ -74,9 +76,12 @@ void* _start_send_queue(void* args) {
                 }
             }
         }
-        sleep(STATUS_UPDATE_INTERVAL);
+        if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
+            break;
+        }
     }
     free(params);
+    return NULL;
 }
 
 void start_send_queue(SendQueueParams* params) {
