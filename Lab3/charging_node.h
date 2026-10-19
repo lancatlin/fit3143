@@ -22,10 +22,15 @@ typedef struct {
     Neighbour neighbors[NBR_COUNT];
 } ChargingNode;
 
+typedef struct {
+    ChargingNode* node;
+    Context* ctx;
+} RunNodeParams;
+
 ChargingNode create_charging_node(int id, int port_count);
 
 void free_charging_node(ChargingNode* node);
 
-int run_node(ChargingNode* node, Context* ctx);
+int run_node(RunNodeParams* params);
 
 int available_ports(ChargingNode* node);

@@ -27,10 +27,13 @@ int context_shutdown(Context* ctx) {
 }
 
 bool context_running(Context* ctx) {
-    return atomic_load(&ctx->stopped);
+    return !atomic_load(&ctx->stopped);
 }
 
 int context_wait(Context* ctx, int sec) {
+    if (!context_running(ctx)) {
+        return 0;
+    }
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
     ts.tv_sec += sec;

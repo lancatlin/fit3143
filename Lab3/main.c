@@ -4,6 +4,7 @@
 #include <mpi.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 
 int main(int argc, char* argv[]) {
     int mpi_rank;
@@ -45,10 +46,17 @@ int main(int argc, char* argv[]) {
     send_params->comm2D = &comm2D;
     start_send_queue(send_params);
 
-    int result = run_node(&node, &ctx);
+    RunNodeParams* node_params = (RunNodeParams*)malloc(sizeof(RunNodeParams));
+    node_params->node = &node;
+    node_params->ctx = &ctx;
+    int result = run_node(node_params);
     if (result != 0) {
         perror("run node error");
     }
+
+    sleep(10);
+
+    context_shutdown(&ctx);
 
     MPI_Finalize();
     context_destroy(&ctx);

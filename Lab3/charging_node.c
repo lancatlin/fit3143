@@ -32,7 +32,19 @@ struct GenerateCarsParams {
 
 void* _generate_cars(void* args);
 
-int run_node(ChargingNode* node, Context* ctx) {
+void* _run_node(void* args);
+
+int run_node(RunNodeParams* params) {
+    pthread_t tid;
+    pthread_create(&tid, NULL, _run_node, params);
+    return 0;
+}
+
+void* _run_node(void* args) {
+    RunNodeParams* params = (RunNodeParams*)args;
+    ChargingNode* node = params->node;
+    Context* ctx = params->ctx;
+
     RandomGenerator* generators =
         malloc(sizeof(RandomGenerator) * node->port_count);
     int seed = node->id;
@@ -44,22 +56,21 @@ int run_node(ChargingNode* node, Context* ctx) {
     int ierr = sem_init(&on_update, 1, 0);
     if (ierr != 0) {
         perror("Failed to create on_update semaphore");
-        return -1;
+        return NULL;
     }
     ierr = sem_init(&new_car, 1, 0);
     if (ierr != 0) {
         perror("Failed to create new_car semaphore");
-        return -1;
+        return NULL;
     }
 
     // start car generator
-    struct GenerateCarsParams* params =
+    struct GenerateCarsParams* gen_params =
         (struct GenerateCarsParams*)malloc(sizeof(struct GenerateCarsParams));
-    params->node = node;
-    params->new_car = &new_car;
-    params->ctx = ctx;
-
-    pthread_create(&generator_id, NULL, _generate_cars, params);
+    gen_params->node = node;
+    gen_params->new_car = &new_car;
+    gen_params->ctx = ctx;
+    pthread_create(&generator_id, NULL, _generate_cars, gen_params);
 
     // start ports
     for (int i = 0; i < node->port_count; i++) {
@@ -78,7 +89,7 @@ int run_node(ChargingNode* node, Context* ctx) {
     // listen for changes
     int availability = available_ports(node);
     printf("Node %d: available: %d\n", node->id, availability);
-    for (int i = 0; i < 50; i++) {
+    while (context_running(ctx)) {
         sem_wait(&on_update); // wait for any port status changes
         availability = available_ports(node);
         printf("Node %d: available: %d\n", node->id, availability);
@@ -90,11 +101,11 @@ int run_node(ChargingNode* node, Context* ctx) {
     printf("Node %d shutting down\n", node->id);
 
     // Send stop signal to all ports
-    for (int i = 0; i < node->port_count; i++) {
-        stop_port(&node->ports[i]);
-    }
+    // for (int i = 0; i < node->port_count; i++) {
+    //     stop_port(&node->ports[i]);
+    // }
     // Send stop signal
-    context_shutdown(ctx);
+    // context_shutdown(ctx);
 
     pthread_join(generator_id, NULL);
 
@@ -106,6 +117,7 @@ int run_node(ChargingNode* node, Context* ctx) {
     // cleanup
     sem_destroy(&on_update);
     sem_destroy(&new_car);
+    free(params);
     return 0;
 }
 

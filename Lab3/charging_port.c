@@ -22,8 +22,9 @@ void* _start_port(void* args) {
     sem_t* on_update = params->on_update;
     sem_t* new_car = params->new_car;
     struct timespec ts;
+    Context* ctx = params->ctx;
 
-    while (port->running) {
+    while (context_running(ctx)) {
         clock_gettime(CLOCK_REALTIME, &ts);
         ts.tv_sec += POLL_TIMEOUT;
         int result = sem_timedwait(new_car, &ts);
@@ -33,10 +34,6 @@ void* _start_port(void* args) {
         // printf("Port %d got a new car\n", port->id);
         port->occupied = true;
         sem_post(on_update);
-
-        if (!port->running) {
-            break;
-        }
 
         // wait for timeout
         int interval = next_random_value(generator);
