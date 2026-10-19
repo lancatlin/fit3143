@@ -9,10 +9,15 @@
 #define RIGHT 3
 
 typedef struct {
+    int rank;
+    int availability;
+} Neighbour;
+
+typedef struct {
     int id;
     int port_count;
     ChargingPort* ports;
-    int neighbors[NBR_COUNT];
+    Neighbour neighbors[NBR_COUNT];
 } ChargingNode;
 
 ChargingNode create_charging_node(int id, int port_count);

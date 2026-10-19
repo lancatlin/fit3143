@@ -2,6 +2,7 @@
 #include "my_mpi.h"
 #include <mpi.h>
 #include <stdio.h>
+#include <stdlib.h>
 
 int main(int argc, char* argv[]) {
     int mpi_rank;
@@ -27,6 +28,18 @@ int main(int argc, char* argv[]) {
     }
     ChargingNode node = create_charging_node(mpi_rank, 9);
     set_neighbours(&node, &comm2D);
+
+    RecvQueueParams* params = (RecvQueueParams*)malloc(sizeof(RecvQueueParams));
+    params->node = &node;
+    params->comm2D = &comm2D;
+    start_recv_queue(params);
+
+    SendQueueParams* send_params =
+        (SendQueueParams*)malloc(sizeof(SendQueueParams));
+    send_params->node = &node;
+    send_params->comm2D = &comm2D;
+    start_send_queue(send_params);
+
     int result = run_node(&node, 10);
     if (result != 0) {
         perror("run node error");

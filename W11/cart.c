@@ -4,7 +4,9 @@
 *
 Chap 7, pp. 121 & ff in PPMPI */
 #include "mpi.h"
+#include <assert.h>
 #include <stdio.h>
+#include <stdlib.h>
 #define NDIMS 2
 #define SHIFT_ROW 0
 #define SHIFT_COL 1
@@ -55,6 +57,22 @@ int main(int argc, char* argv[]) {
            my_rank, coord[0], coord[1], SHIFT_COL, DISP, nbr_j_lo, my_rank,
            nbr_j_hi);
     fflush(stdout);
+
+    if (my_rank == 0) {
+        int* data = (int*)malloc(sizeof(int) * p);
+        int count = 0;
+        int buffer = 0;
+        MPI_Status status;
+        for (int i = 0; i < p - 1; i++) {
+            MPI_Recv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+                     MPI_COMM_WORLD, &status);
+            printf("receive from %d: %d\n", status.MPI_SOURCE, buffer);
+            assert(status.MPI_SOURCE < p);
+            data[status.MPI_SOURCE] = buffer;
+        }
+    } else {
+        MPI_Send(&my_rank, 1, MPI_INT, 0, 0, MPI_COMM_WORLD);
+    }
 
     MPI_Comm_free(&comm2D);
 
