@@ -66,8 +66,9 @@ int run_node(ChargingNode* node, int duration) {
 
     // start ports
     for (int i = 0; i < node->port_count; i++) {
-        generators[i] = create_random_generator(i, seed, 1000000, 5000000);
-        start_port(&node->ports[i], &generators[i], &on_update, &new_car);
+        generators[i] = create_random_generator(i, seed, 2, 5);
+        start_port(&node->ports[i], &generators[i], &on_update, &new_car, &mut,
+                   &stop);
     }
     printf("Node %d started\n", node->id);
 
@@ -85,15 +86,15 @@ int run_node(ChargingNode* node, int duration) {
 
     printf("Node %d shutting down\n", node->id);
 
+    // Send stop signal to all ports
+    for (int i = 0; i < node->port_count; i++) {
+        stop_port(&node->ports[i]);
+    }
     // Send stop signal
     pthread_mutex_lock(&mut);
     pthread_cond_broadcast(&stop);
     pthread_mutex_unlock(&mut);
 
-    // Send stop signal to all ports
-    for (int i = 0; i < node->port_count; i++) {
-        stop_port(&node->ports[i]);
-    }
     pthread_join(generator_id, NULL);
 
     // join all threads
@@ -121,8 +122,11 @@ void* _generate_cars(void* args) {
 
     while (true) {
         clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += next_random_value(&generator);
+        ts.tv_sec += 1; // next_random_value(&generator);
+        printf("Generator waiting\n");
+        pthread_mutex_lock(params->mutex);
         int result = pthread_cond_timedwait(params->stop, params->mutex, &ts);
+        pthread_mutex_unlock(params->mutex);
         if (result == 0) {
             // stop
             break;
@@ -132,6 +136,7 @@ void* _generate_cars(void* args) {
         sem_post(params->new_car);
     }
 
+    printf("Generator stopped\n");
     free(params);
     return NULL;
 }

@@ -1,5 +1,6 @@
 #include "charging_port.h"
 #include "random_generator.h"
+#include <bits/pthreadtypes.h>
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -14,15 +15,17 @@ ChargingPort create_charging_port(int id) {
     return port;
 }
 
-struct PThreadParameter {
+struct StartPortParameter {
     ChargingPort* port;
     RandomGenerator* generator;
     sem_t* on_update;
     sem_t* new_car;
+    pthread_mutex_t* mutex;
+    pthread_cond_t* stop;
 };
 
 void* _start_port(void* args) {
-    struct PThreadParameter* params = (struct PThreadParameter*)args;
+    struct StartPortParameter* params = (struct StartPortParameter*)args;
     ChargingPort* port = params->port;
     RandomGenerator* generator = params->generator;
     sem_t* on_update = params->on_update;
@@ -39,11 +42,17 @@ void* _start_port(void* args) {
         printf("Port %d got a new car\n", port->id);
         port->occupied = true;
         sem_post(on_update);
+
         int interval = next_random_value(generator);
-        if (port->occupied) {
-            interval *= OCCUPIED_RATE;
+        clock_gettime(CLOCK_REALTIME, &ts);
+        ts.tv_sec += interval;
+
+        pthread_mutex_lock(params->mutex);
+        if (pthread_cond_timedwait(params->stop, params->mutex, &ts) == 0) {
+            port->running = false;
         }
-        usleep(interval);
+        pthread_mutex_unlock(params->mutex);
+
         port->occupied = false;
         printf("Port %d released\n", port->id);
         sem_post(on_update);
@@ -56,14 +65,17 @@ void* _start_port(void* args) {
 }
 
 void start_port(ChargingPort* port, RandomGenerator* generator,
-                sem_t* on_update, sem_t* new_car) {
+                sem_t* on_update, sem_t* new_car, pthread_mutex_t* mutex,
+                pthread_cond_t* stop) {
     port->running = true;
-    struct PThreadParameter* params =
-        (struct PThreadParameter*)malloc(sizeof(struct PThreadParameter));
+    struct StartPortParameter* params =
+        (struct StartPortParameter*)malloc(sizeof(struct StartPortParameter));
     params->port = port;
     params->generator = generator;
     params->on_update = on_update;
     params->new_car = new_car;
+    params->mutex = mutex;
+    params->stop = stop;
     int result = pthread_create(&port->thread_id, NULL, _start_port, params);
     if (result != 0) {
         perror("Failed to create pthread");
