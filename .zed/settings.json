@@ -1,0 +1,17 @@
+{
+  "lsp": {
+    "clangd": {
+      "binary": {
+        "path": "/usr/bin/toolbox",
+        "arguments": [
+          "run",
+          "-c",
+          "mpi",
+          "clangd",
+          "--background-index",
+          "--query-driver=/usr/bin/mpicc"
+        ]
+      }
+    }
+  }
+}
