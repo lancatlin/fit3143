@@ -36,8 +36,8 @@ int request_table_received(RequestTable* table, int id) {
     clock_gettime(CLOCK_REALTIME, &table->end_time[key]);
     pthread_mutex_unlock(&table->mutex);
 
-    int ms = get_duration_ms(table->start_time[key], table->end_time[key]);
-    printf("message %d duration %d ms\n", id, ms);
+    // int ms = get_duration_ms(table->start_time[key], table->end_time[key]);
+    // printf("message %d duration %d ms\n", id, ms);
     return 0;
 }
 

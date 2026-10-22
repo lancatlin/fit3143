@@ -12,6 +12,8 @@
 #include <time.h>
 #include <unistd.h>
 
+void _request_neighbours(ChargingNode* node, Context* ctx);
+
 ChargingNode create_charging_node(int id, int port_count) {
     ChargingPort* ports = malloc(sizeof(ChargingPort) * port_count);
     for (int i = 0; i < port_count; i++) {
@@ -97,10 +99,11 @@ void* _run_node(void* args) {
         if (sem_trywait(&on_update) == 0) {
             availability = available_ports(node);
             // printf("Node %d: available: %d\n", node->id, availability);
-            // if (availability < AVAILABILITY_BASELINE) {
-            //     printf("Node %d: low availability: %d\n", node->id,
-            //            availability);
-            // }
+            if (availability < AVAILABILITY_BASELINE) {
+                _request_neighbours(node, params->ctx);
+                printf("Node %d: low availability: %d\n", node->id,
+                       availability);
+            }
         }
         if (context_wait(ctx, 1) == 0) {
             break;
@@ -169,7 +172,7 @@ void* _generate_cars(void* args) {
     struct timespec ts;
     // Generate a new car every 0.5 to 3 seconds
     RandomGenerator generator = create_random_generator(
-        params->node->id, 1000, 0.5 * SECOND, 3 * SECOND);
+        params->node->id, 1000, 0.1 * SECOND, 1.5 * SECOND);
     ChargingNode* node = params->node;
 
     while (true) {
@@ -181,8 +184,7 @@ void* _generate_cars(void* args) {
         // put a new car
         // printf("Generator post a new car\n");
         int availability = available_ports(params->node);
-        _request_neighbours(node, params->ctx);
-        if (availability > AVAILABILITY_BASELINE) {
+        if (availability > 0) {
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);
             // Let a port to take this car
