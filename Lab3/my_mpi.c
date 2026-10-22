@@ -57,6 +57,8 @@ void _send_availability(MessageQueue* queue, ChargingNode* node, int recipient,
     msg.buffer[1] = buffer[1]; // reply with same message id
     message_queue_put(queue, msg);
 }
+#define RECV_POLL_US 1000
+
 /*
  * Receive messages from any node, and call corresponding handler by tag
  */
@@ -79,10 +81,7 @@ void* _start_recv_queue(void* args) {
         int done = 0;
         MPI_Test(&request, &done, &status);
         if (!done) {
-            // if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
-            //     // received shutdown signal, exit
-            //     break;
-            // }
+            usleep(RECV_POLL_US);
             continue;
         }
 
@@ -121,6 +120,8 @@ pthread_t start_recv_queue(RecvQueueParams* params) {
     return thread_id;
 }
 
+#define SEND_SLOTS 8
+
 /*
  * Periodically send the current availability to neighbours when it is changed
  */
@@ -130,38 +131,44 @@ void* _start_send_queue(void* args) {
     int buffer = 0;
     ChargingNode* node = params->node;
 
-    MPI_Request request;
-    MPI_Status status;
+    // Each in-flight MPI_Isend needs its own buffer and request. The buffer
+    // must stay untouched until the request completes.
+    Message msgs[SEND_SLOTS];
+    MPI_Request reqs[SEND_SLOTS];
+    for (int i = 0; i < SEND_SLOTS; i++) {
+        reqs[i] = MPI_REQUEST_NULL;
+    }
 
-    int err;
-
-    Message msg;
     MessageQueue* queue = &params->ctx->queue;
     while (context_running(params->ctx)) {
-        // int availability = available_ports(node);
-        struct timespec ts = get_future(1000);
-        err = sem_timedwait(&queue->new_message, &ts);
-        if (queue->count > 0) {
-            int err = message_queue_take(queue, &msg);
-            assert(err == 0);
-            MPI_Isend(&msg.buffer, PAYLOAD_SIZE, MPI_INT, msg.recipient,
-                      msg.tag, *params->comm2D, &request);
-            printf("Node %d: Sent message id %d tag %d to %d: %d, %d\n",
-                   node->id, msg.id, msg.tag, msg.recipient, msg.buffer[0],
-                   msg.buffer[1]);
-            // for (int i = 0; i < NBR_COUNT; i++) {
-            //     if (node->neighbors[i].rank >= 0) {
-            //         MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,
-            //                  TAG_NODE_AVAILABILITY, *params->comm2D);
-            //     }
-            // }
+        // Reap finished sends and find a free slot
+        int slot = -1;
+        for (int i = 0; i < SEND_SLOTS; i++) {
+            if (reqs[i] != MPI_REQUEST_NULL) {
+                int done = 0;
+                MPI_Test(&reqs[i], &done, MPI_STATUS_IGNORE);
+            }
+            if (reqs[i] == MPI_REQUEST_NULL && slot < 0) {
+                slot = i;
+            }
         }
-        // if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
-        //     break;
-        // }
+
+        if (slot >= 0 && queue->count > 0) {
+            int err = message_queue_take(queue, &msgs[slot]);
+            assert(err == 0);
+            Message* msg = &msgs[slot];
+            MPI_Isend(msg->buffer, PAYLOAD_SIZE, MPI_INT, msg->recipient,
+                      msg->tag, *params->comm2D, &reqs[slot]);
+            printf("Node %d: Sent message id %d tag %d to %d: %d, %d\n",
+                   node->id, msg->id, msg->tag, msg->recipient, msg->buffer[0],
+                   msg->buffer[1]);
+        } else {
+            struct timespec ts = get_future(STATUS_UPDATE_INTERVAL);
+            sem_timedwait(&queue->new_message, &ts);
+        }
     }
-    MPI_Cancel(&request);
-    MPI_Wait(&request, MPI_STATUS_IGNORE);
+    // Let outstanding sends finish before the buffers go away
+    MPI_Waitall(SEND_SLOTS, reqs, MPI_STATUSES_IGNORE);
     free(params);
     return NULL;
 }

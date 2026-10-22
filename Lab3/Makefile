@@ -1,6 +1,7 @@
 # Justin Lin       35808217    hlin0094@student.monash.edu
 # Clement Angelo   35664614    cang0028@student.monash.edu
 CC=mpicc
+CFLAGS=-g -MMD -MP
 LIBS= -lm -lpthread
 .PHONY: all
 all: main
@@ -20,4 +21,10 @@ test: test.o charging_node.o charging_port.o random_generator.o my_mpi.o context
 	$(CC) $^ -o $@ $(LIBS)
 
 %.o: %.c
-	$(CC) -g -c $^ -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
+
+.PHONY: clean
+clean:
+	rm -f *.o *.d main test
+
+-include $(wildcard *.d)
