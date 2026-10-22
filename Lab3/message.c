@@ -1,5 +1,6 @@
 #include "message.h"
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 
 void message_queue_init(MessageQueue* queue) {
@@ -9,6 +10,7 @@ void message_queue_init(MessageQueue* queue) {
     queue->write_head = 0;
     queue->read_head = 0;
     pthread_mutex_init(&queue->mutex, NULL);
+    sem_init(&queue->new_message, 1, 0);
 }
 
 int message_queue_put(MessageQueue* queue, Message msg) {
@@ -17,11 +19,12 @@ int message_queue_put(MessageQueue* queue, Message msg) {
         return -1;
     }
     pthread_mutex_lock(&queue->mutex);
-    // msg.id = queue->next_id;
+    msg.id = queue->next_id;
     queue->messages[queue->write_head] = msg;
     queue->write_head = (queue->write_head + 1) % queue->cap;
     queue->count += 1;
     queue->next_id += 1;
+    sem_post(&queue->new_message);
     pthread_mutex_unlock(&queue->mutex);
     return msg.id;
 }

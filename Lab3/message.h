@@ -24,6 +24,7 @@ typedef struct {
     int write_head;
     Message messages[QUEUE_SIZE];
     pthread_mutex_t mutex;
+    sem_t new_message;
 } MessageQueue;
 
 void message_queue_init(MessageQueue* queue);

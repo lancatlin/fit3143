@@ -2,11 +2,14 @@
 #include "charging_node.h"
 #include "context.h"
 #include "message.h"
+#include "mpi.h"
 #include "table.h"
 #include <assert.h>
 #include <pthread.h>
+#include <semaphore.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 #include <unistd.h>
 
 /*
@@ -126,15 +129,23 @@ void* _start_send_queue(void* args) {
     int count = 0;
     int buffer = 0;
     ChargingNode* node = params->node;
+
+    MPI_Request request;
+    MPI_Status status;
+
+    int err;
+
     Message msg;
     MessageQueue* queue = &params->ctx->queue;
     while (context_running(params->ctx)) {
         // int availability = available_ports(node);
+        struct timespec ts = get_future(1000);
+        err = sem_timedwait(&queue->new_message, &ts);
         if (queue->count > 0) {
             int err = message_queue_take(queue, &msg);
             assert(err == 0);
-            MPI_Send(&msg.buffer, PAYLOAD_SIZE, MPI_INT, msg.recipient, msg.tag,
-                     *params->comm2D);
+            MPI_Isend(&msg.buffer, PAYLOAD_SIZE, MPI_INT, msg.recipient,
+                      msg.tag, *params->comm2D, &request);
             printf("Node %d: Sent message id %d tag %d to %d: %d, %d\n",
                    node->id, msg.id, msg.tag, msg.recipient, msg.buffer[0],
                    msg.buffer[1]);
@@ -149,6 +160,8 @@ void* _start_send_queue(void* args) {
         //     break;
         // }
     }
+    MPI_Cancel(&request);
+    MPI_Wait(&request, MPI_STATUS_IGNORE);
     free(params);
     return NULL;
 }

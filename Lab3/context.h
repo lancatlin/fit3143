@@ -37,3 +37,5 @@ int context_wait(Context* ctx, int msec);
 
 /* Destroy a context */
 void context_destroy(Context* ctx);
+
+struct timespec get_future(int ms);

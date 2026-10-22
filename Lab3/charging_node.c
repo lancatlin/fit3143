@@ -154,8 +154,7 @@ void _request_neighbours(ChargingNode* node, Context* ctx) {
     for (int i = 0; i < NBR_COUNT; i++) {
         msg.recipient = node->neighbors[i].rank;
         if (msg.recipient >= 0) {
-            request_table_send(&ctx->table, &msg);
-            msg.buffer[1] = msg.id;
+            msg.buffer[1] = request_table_send(&ctx->table);
             err = message_queue_put(&ctx->queue, msg);
             if (err < 0) {
                 perror("Failed to put message into queue\n");

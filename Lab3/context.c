@@ -6,6 +6,7 @@
 #include <stdbool.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
 
 int context_init(Context* ctx) {
     if (pthread_mutex_init(&ctx->mutex, NULL) != 0) {
@@ -34,19 +35,24 @@ bool context_running(Context* ctx) {
     return !atomic_load(&ctx->stopped);
 }
 
-int context_wait(Context* ctx, int msec) {
-    if (!context_running(ctx)) {
-        return 0;
-    }
+struct timespec get_future(int ms) {
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += msec / 1000;
-    ts.tv_nsec += (long)(msec % 1000) * 1000000L;
+    ts.tv_sec += ms / 1000;
+    ts.tv_nsec += (long)(ms % 1000) * 1000000L;
     if (ts.tv_nsec >= 1000000000L) {
         ts.tv_sec += 1;
         ts.tv_nsec -= 1000000000L;
     }
+    return ts;
+}
+
+int context_wait(Context* ctx, int msec) {
+    if (!context_running(ctx)) {
+        return 0;
+    }
     pthread_mutex_lock(&ctx->mutex);
+    struct timespec ts = get_future(msec);
     int result = pthread_cond_timedwait(&ctx->cond, &ctx->mutex, &ts);
     pthread_mutex_unlock(&ctx->mutex);
     return result;
@@ -56,4 +62,5 @@ void context_destroy(Context* ctx) {
     pthread_mutex_destroy(&ctx->mutex);
     pthread_cond_destroy(&ctx->cond);
     message_queue_destroy(&ctx->queue);
+    request_table_destroy(&ctx->table);
 }
