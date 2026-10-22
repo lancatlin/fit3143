@@ -44,6 +44,14 @@ void _update_neighbour_availability(ChargingNode* node, int source,
     }
 }
 
+void _send_availability(MessageQueue* queue, ChargingNode* node,
+                        int recipient) {
+    Message msg;
+    msg.recipient = recipient;
+    msg.tag = TAG_NODE_AVAILABILITY_RESPONSE;
+    msg.buffer[0] = available_ports(node);
+    message_queue_put(queue, msg);
+}
 /*
  * Receive messages from any node, and call corresponding handler by tag
  */
@@ -54,6 +62,7 @@ void* _start_recv_queue(void* args) {
     MPI_Request request;
     MPI_Status status;
     ChargingNode* node = params->node;
+    MessageQueue* queue = &params->ctx->queue;
 
     int ierr = MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                          *params->comm2D, &request);
@@ -75,7 +84,10 @@ void* _start_recv_queue(void* args) {
         int source = status.MPI_SOURCE;
         int tag = status.MPI_TAG;
         switch (tag) {
-        case TAG_NODE_AVAILABILITY:
+        case TAG_NODE_AVAILABILITY_REQUEST:
+            _send_availability(queue, node, source);
+            break;
+        case TAG_NODE_AVAILABILITY_RESPONSE:
             _update_neighbour_availability(node, source, buffer);
             break;
 

@@ -145,6 +145,18 @@ Neighbour* _max_neighbour(ChargingNode* node) {
     return max_neighbour;
 }
 
+void _request_neighbours(ChargingNode* node, MessageQueue* queue) {
+    Message msg;
+    msg.buffer[0] = 0;
+    msg.tag = TAG_NODE_AVAILABILITY_REQUEST;
+    for (int i = 0; i < NBR_COUNT; i++) {
+        msg.recipient = node->neighbors[i].rank;
+        if (msg.recipient >= 0) {
+            message_queue_put(queue, msg);
+        }
+    }
+}
+
 /* Generate random car traffic */
 void* _generate_cars(void* args) {
     struct GenerateCarsParams* params = (struct GenerateCarsParams*)args;
@@ -163,22 +175,13 @@ void* _generate_cars(void* args) {
         // put a new car
         // printf("Generator post a new car\n");
         int availability = available_ports(params->node);
-        Message msg;
-        msg.buffer[0] = availability;
-        msg.tag = TAG_NODE_AVAILABILITY;
-        for (int i = 0; i < NBR_COUNT; i++) {
-            msg.recipient = node->neighbors[i].rank;
-            if (msg.recipient >= 0) {
-                message_queue_put(&params->ctx->queue, msg);
-            }
-        }
-
         if (availability > AVAILABILITY_BASELINE) {
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);
             // Let a port to take this car
             sem_post(params->new_car);
         } else {
+            _request_neighbours(node, &params->ctx->queue);
             Neighbour* nbr = _max_neighbour(node);
 
             if (nbr->availability <= AVAILABILITY_BASELINE) {

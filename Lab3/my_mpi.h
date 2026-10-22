@@ -12,9 +12,6 @@
 #define DISP 1
 #define STATUS_UPDATE_INTERVAL 100 // milliseconds
 
-/* Different tags to indicate message purpose */
-#define TAG_NODE_AVAILABILITY 1
-
 /* Set up neighbour list for a node */
 void set_neighbours(ChargingNode* node, MPI_Comm* comm2D);
 

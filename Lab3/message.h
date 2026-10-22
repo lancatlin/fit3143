@@ -5,6 +5,10 @@
 #define PAYLOAD_SIZE 1
 #define QUEUE_SIZE 10
 
+/* Different tags to indicate message purpose */
+#define TAG_NODE_AVAILABILITY_REQUEST 1
+#define TAG_NODE_AVAILABILITY_RESPONSE 2
+
 typedef struct {
     int id;
     int tag;
