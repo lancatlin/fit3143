@@ -17,7 +17,7 @@ int message_queue_put(MessageQueue* queue, Message msg) {
         return -1;
     }
     pthread_mutex_lock(&queue->mutex);
-    msg.id = queue->next_id;
+    // msg.id = queue->next_id;
     queue->messages[queue->write_head] = msg;
     queue->write_head = (queue->write_head + 1) % queue->cap;
     queue->count += 1;

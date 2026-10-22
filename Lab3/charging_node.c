@@ -4,6 +4,7 @@
 #include "message.h"
 #include "my_mpi.h"
 #include "random_generator.h"
+#include "table.h"
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -145,16 +146,17 @@ Neighbour* _max_neighbour(ChargingNode* node) {
     return max_neighbour;
 }
 
-void _request_neighbours(ChargingNode* node, MessageQueue* queue) {
+void _request_neighbours(ChargingNode* node, Context* ctx) {
     Message msg;
     msg.buffer[0] = 0;
-    msg.buffer[1] = 0;
     msg.tag = TAG_NODE_AVAILABILITY_REQUEST;
     int err;
     for (int i = 0; i < NBR_COUNT; i++) {
         msg.recipient = node->neighbors[i].rank;
         if (msg.recipient >= 0) {
-            err = message_queue_put(queue, msg);
+            request_table_send(&ctx->table, &msg);
+            msg.buffer[1] = msg.id;
+            err = message_queue_put(&ctx->queue, msg);
             if (err < 0) {
                 perror("Failed to put message into queue\n");
             }
@@ -180,7 +182,7 @@ void* _generate_cars(void* args) {
         // put a new car
         // printf("Generator post a new car\n");
         int availability = available_ports(params->node);
-        _request_neighbours(node, &params->ctx->queue);
+        _request_neighbours(node, params->ctx);
         if (availability > AVAILABILITY_BASELINE) {
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);

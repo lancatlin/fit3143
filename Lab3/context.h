@@ -1,6 +1,7 @@
 #pragma once
 
 #include "message.h"
+#include "table.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -19,6 +20,7 @@ typedef struct {
     pthread_cond_t cond;
     atomic_bool stopped;
     MessageQueue queue;
+    RequestTable table;
 } Context;
 
 /* initialise a Context */

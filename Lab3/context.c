@@ -1,5 +1,6 @@
 #include "context.h"
 #include "message.h"
+#include "table.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -17,6 +18,7 @@ int context_init(Context* ctx) {
     }
     atomic_init(&ctx->stopped, NULL);
     message_queue_init(&ctx->queue);
+    request_table_init(&ctx->table);
     return 0;
 }
 

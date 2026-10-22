@@ -2,6 +2,7 @@
 #include "charging_node.h"
 #include "context.h"
 #include "message.h"
+#include "table.h"
 #include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -44,12 +45,13 @@ void _update_neighbour_availability(ChargingNode* node, int source,
     }
 }
 
-void _send_availability(MessageQueue* queue, ChargingNode* node,
-                        int recipient) {
+void _send_availability(MessageQueue* queue, ChargingNode* node, int recipient,
+                        int* buffer) {
     Message msg;
     msg.recipient = recipient;
     msg.tag = TAG_NODE_AVAILABILITY_RESPONSE;
     msg.buffer[0] = available_ports(node);
+    msg.buffer[1] = buffer[1]; // reply with same message id
     message_queue_put(queue, msg);
 }
 /*
@@ -74,10 +76,10 @@ void* _start_recv_queue(void* args) {
         int done = 0;
         MPI_Test(&request, &done, &status);
         if (!done) {
-            if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
-                // received shutdown signal, exit
-                break;
-            }
+            // if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
+            //     // received shutdown signal, exit
+            //     break;
+            // }
             continue;
         }
 
@@ -85,9 +87,10 @@ void* _start_recv_queue(void* args) {
         int tag = status.MPI_TAG;
         switch (tag) {
         case TAG_NODE_AVAILABILITY_REQUEST:
-            _send_availability(queue, node, source);
+            _send_availability(queue, node, source, buffer);
             break;
         case TAG_NODE_AVAILABILITY_RESPONSE:
+            request_table_received(&params->ctx->table, buffer[1]);
             _update_neighbour_availability(node, source, buffer);
             break;
 
@@ -142,9 +145,9 @@ void* _start_send_queue(void* args) {
             //     }
             // }
         }
-        if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
-            break;
-        }
+        // if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
+        //     break;
+        // }
     }
     free(params);
     return NULL;
