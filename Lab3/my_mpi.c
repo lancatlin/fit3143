@@ -26,6 +26,18 @@ void set_neighbours(ChargingNode* node, MPI_Comm* comm2D) {
            coord[1], node->neighbors[LEFT].rank, node->neighbors[RIGHT].rank);
 }
 
+void _update_neighbour_availability(ChargingNode* node, int source,
+                                    int buffer) {
+    for (int i = 0; i < NBR_COUNT; i++) {
+        if (node->neighbors[i].rank == source) {
+            node->neighbors[i].availability = buffer;
+            // printf("Node %d: Updated from %d: %d\n", node->id, source,
+            //        buffer);
+            break;
+        }
+    }
+}
+
 void* _start_recv_queue(void* args) {
     RecvQueueParams* params = (RecvQueueParams*)args;
     int count = 0;
@@ -51,13 +63,15 @@ void* _start_recv_queue(void* args) {
         }
 
         int source = status.MPI_SOURCE;
-        for (int i = 0; i < NBR_COUNT; i++) {
-            if (node->neighbors[i].rank == source) {
-                node->neighbors[i].availability = buffer;
-                // printf("Node %d: Updated from %d: %d\n", node->id, source,
-                //        buffer);
-                break;
-            }
+        int tag = status.MPI_TAG;
+        switch (tag) {
+        case TAG_NODE_AVAILABILITY:
+            _update_neighbour_availability(node, source, buffer);
+            break;
+
+        default:
+            printf("Node %d: received undefined message tag: %d\n", node->id,
+                   tag);
         }
 
         MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
