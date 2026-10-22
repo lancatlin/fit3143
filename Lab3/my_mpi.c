@@ -33,10 +33,10 @@ void set_neighbours(ChargingNode* node, MPI_Comm* comm2D) {
 
 /* Update a neighbour's availability from received message */
 void _update_neighbour_availability(ChargingNode* node, int source,
-                                    int buffer) {
+                                    int* buffer) {
     for (int i = 0; i < NBR_COUNT; i++) {
         if (node->neighbors[i].rank == source) {
-            node->neighbors[i].availability = buffer;
+            node->neighbors[i].availability = buffer[0];
             // printf("Node %d: Updated from %d: %d\n", node->id, source,
             //        buffer);
             break;
@@ -58,14 +58,14 @@ void _send_availability(MessageQueue* queue, ChargingNode* node,
 void* _start_recv_queue(void* args) {
     RecvQueueParams* params = (RecvQueueParams*)args;
     int count = 0;
-    int buffer = 0;
+    int buffer[PAYLOAD_SIZE];
     MPI_Request request;
     MPI_Status status;
     ChargingNode* node = params->node;
     MessageQueue* queue = &params->ctx->queue;
 
-    int ierr = MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
-                         *params->comm2D, &request);
+    int ierr = MPI_Irecv(&buffer, PAYLOAD_SIZE, MPI_INT, MPI_ANY_SOURCE,
+                         MPI_ANY_TAG, *params->comm2D, &request);
     if (ierr != MPI_SUCCESS) {
         perror("Failed to post receive");
         return NULL;
@@ -96,7 +96,7 @@ void* _start_recv_queue(void* args) {
                    tag);
         }
 
-        MPI_Irecv(&buffer, 1, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
+        MPI_Irecv(&buffer, PAYLOAD_SIZE, MPI_INT, MPI_ANY_SOURCE, MPI_ANY_TAG,
                   *params->comm2D, &request);
     }
     MPI_Cancel(&request);
@@ -132,8 +132,9 @@ void* _start_send_queue(void* args) {
             assert(err == 0);
             MPI_Send(&msg.buffer, PAYLOAD_SIZE, MPI_INT, msg.recipient, msg.tag,
                      *params->comm2D);
-            printf("Node %d: Sent message id %d tag %d to %d: %d\n", node->id,
-                   msg.id, msg.tag, msg.recipient, msg.buffer[0]);
+            printf("Node %d: Sent message id %d tag %d to %d: %d, %d\n",
+                   node->id, msg.id, msg.tag, msg.recipient, msg.buffer[0],
+                   msg.buffer[1]);
             // for (int i = 0; i < NBR_COUNT; i++) {
             //     if (node->neighbors[i].rank >= 0) {
             //         MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,

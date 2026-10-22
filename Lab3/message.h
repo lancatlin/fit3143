@@ -2,7 +2,7 @@
 
 #include <pthread.h>
 #include <semaphore.h>
-#define PAYLOAD_SIZE 1
+#define PAYLOAD_SIZE 2
 #define QUEUE_SIZE 10
 
 /* Different tags to indicate message purpose */
