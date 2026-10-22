@@ -130,9 +130,24 @@ int available_ports(ChargingNode* node) {
     return sum;
 }
 
+int _max_neighbour(ChargingNode* node) {
+    int max_neighbour = -1;
+    int max_availability = -1;
+    for (int i = 0; i < NBR_COUNT; i++) {
+        Neighbour nbr = node->neighbors[i];
+        if (nbr.rank >= 0 && nbr.availability > max_availability) {
+            max_availability = nbr.availability;
+            max_neighbour = i;
+        }
+    }
+    return max_neighbour;
+}
+
+/* Generate random car traffic */
 void* _generate_cars(void* args) {
     struct GenerateCarsParams* params = (struct GenerateCarsParams*)args;
     struct timespec ts;
+    // Generate a new car every 0.5 to 3 seconds
     RandomGenerator generator = create_random_generator(
         params->node->id, 1000, 0.5 * SECOND, 3 * SECOND);
     ChargingNode* node = params->node;
@@ -140,6 +155,7 @@ void* _generate_cars(void* args) {
     while (true) {
         int interval = next_random_value(&generator);
         if (context_wait(params->ctx, interval) == 0) {
+            // Received shutdown signal, exit
             break;
         }
         // put a new car
@@ -148,19 +164,15 @@ void* _generate_cars(void* args) {
         if (availability > AVAILABILITY_BASELINE) {
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);
+            // Let a port to take this car
             sem_post(params->new_car);
         } else {
-            for (int i = 0; i < NBR_COUNT; i++) {
-                if (node->neighbors[i].availability > AVAILABILITY_BASELINE &&
-                    node->neighbors[i].rank > 0) {
-                    printf(
-                        "Node %d is low availability %d: please go to Node %d "
-                        "(%d free)\n",
-                        node->id, availability, node->neighbors[i].rank,
-                        node->neighbors[i].availability);
-                    break;
-                }
-            }
+            int max_nbr = _max_neighbour(node);
+
+            printf("Node %d is low availability %d: please go to Node %d "
+                   "(%d free)\n",
+                   node->id, availability, node->neighbors[max_nbr].rank,
+                   node->neighbors[max_nbr].availability);
         }
     }
 
