@@ -1,12 +1,14 @@
 #include "table.h"
-#include "message.h"
-#include <bits/time.h>
+#include "time_helper.h"
 #include <pthread.h>
 #include <stdio.h>
 #include <time.h>
 
 void request_table_init(RequestTable* table) {
     table->next_id = 0;
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        table->message_id[i] = -1;
+    }
     pthread_mutex_init(&table->mutex, NULL);
 }
 
@@ -34,9 +36,7 @@ int request_table_received(RequestTable* table, int id) {
     clock_gettime(CLOCK_REALTIME, &table->end_time[key]);
     pthread_mutex_unlock(&table->mutex);
 
-    int sec = table->end_time[key].tv_sec - table->start_time[key].tv_sec;
-    int nsec = table->end_time[key].tv_nsec - table->start_time[key].tv_nsec;
-    int ms = sec * 1000 + nsec / 1000000;
+    int ms = get_duration_ms(table->start_time[key], table->end_time[key]);
     printf("message %d duration %d ms\n", id, ms);
     return 0;
 }

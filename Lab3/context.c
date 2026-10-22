@@ -1,6 +1,7 @@
 #include "context.h"
 #include "message.h"
 #include "table.h"
+#include "time_helper.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -33,18 +34,6 @@ int context_shutdown(Context* ctx) {
 
 bool context_running(Context* ctx) {
     return !atomic_load(&ctx->stopped);
-}
-
-struct timespec get_future(int ms) {
-    struct timespec ts;
-    clock_gettime(CLOCK_REALTIME, &ts);
-    ts.tv_sec += ms / 1000;
-    ts.tv_nsec += (long)(ms % 1000) * 1000000L;
-    if (ts.tv_nsec >= 1000000000L) {
-        ts.tv_sec += 1;
-        ts.tv_nsec -= 1000000000L;
-    }
-    return ts;
 }
 
 int context_wait(Context* ctx, int msec) {

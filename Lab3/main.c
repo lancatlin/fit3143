@@ -1,6 +1,8 @@
 #include "charging_node.h"
 #include "context.h"
 #include "my_mpi.h"
+#include "table.h"
+#include "time_helper.h"
 #include <mpi.h>
 #include <pthread.h>
 #include <stdio.h>
@@ -76,6 +78,20 @@ int main(int argc, char* argv[]) {
     pthread_join(node.thread_id, NULL);
     pthread_join(recv_id, NULL);
     pthread_join(send_id, NULL);
+
+    // TODO: handle table overwriting
+    unsigned long total_communication = 0;
+    unsigned long total_messages = 0;
+
+    for (int i = 0; i < TABLE_SIZE; i++) {
+        if (ctx.table.message_id[i] >= 0) {
+            total_messages++;
+            total_communication +=
+                get_duration_ms(ctx.table.start_time[i], ctx.table.end_time[i]);
+        }
+    }
+    printf("Node %d: Total communication %ld ms. Total messages: %ld\n",
+           node.id, total_communication, total_messages);
 
     context_destroy(&ctx);
     MPI_Comm_free(&comm2D);
