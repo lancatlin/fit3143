@@ -13,6 +13,8 @@ typedef struct {
     int max;
 } RandomGenerator;
 
+/* Create a new RandomGenerator, use id and seed to generate seed */
 RandomGenerator create_random_generator(int id, int seed, int min, int max);
 
+/* Get the next random value (mutating the seed) */
 int next_random_value(RandomGenerator* generator);
