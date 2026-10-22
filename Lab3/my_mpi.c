@@ -6,6 +6,9 @@
 #include <stdlib.h>
 #include <unistd.h>
 
+/*
+ * Set the cartesion neighbours for a node
+ */
 void set_neighbours(ChargingNode* node, MPI_Comm* comm2D) {
     int coord[NDIMS];
     int my_cart_rank;
@@ -26,6 +29,7 @@ void set_neighbours(ChargingNode* node, MPI_Comm* comm2D) {
            coord[1], node->neighbors[LEFT].rank, node->neighbors[RIGHT].rank);
 }
 
+/* Update a neighbour's availability from received message */
 void _update_neighbour_availability(ChargingNode* node, int source,
                                     int buffer) {
     for (int i = 0; i < NBR_COUNT; i++) {
@@ -38,6 +42,9 @@ void _update_neighbour_availability(ChargingNode* node, int source,
     }
 }
 
+/*
+ * Receive messages from any node, and call corresponding handler by tag
+ */
 void* _start_recv_queue(void* args) {
     RecvQueueParams* params = (RecvQueueParams*)args;
     int count = 0;
@@ -57,6 +64,7 @@ void* _start_recv_queue(void* args) {
         MPI_Test(&request, &done, &status);
         if (!done) {
             if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
+                // received shutdown signal, exit
                 break;
             }
             continue;
@@ -93,6 +101,9 @@ pthread_t start_recv_queue(RecvQueueParams* params) {
     return thread_id;
 }
 
+/*
+ * Periodically send the current availability to neighbours when it is changed
+ */
 void* _start_send_queue(void* args) {
     SendQueueParams* params = (SendQueueParams*)args;
     int count = 0;
