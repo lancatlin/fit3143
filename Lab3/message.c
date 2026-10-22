@@ -22,10 +22,6 @@ int message_queue_put(MessageQueue* queue, Message msg) {
     queue->write_head = (queue->write_head + 1) % queue->cap;
     queue->count += 1;
     queue->next_id += 1;
-    if (queue->count > queue->cap) {
-        printf("Exceeding queue size: overwriting");
-        queue->count = queue->cap;
-    }
     pthread_mutex_unlock(&queue->mutex);
     return msg.id;
 }
@@ -40,4 +36,8 @@ int message_queue_take(MessageQueue* queue, Message* msg) {
     queue->count -= 1;
     pthread_mutex_unlock(&queue->mutex);
     return 0;
+}
+
+void message_queue_destroy(MessageQueue* queue) {
+    pthread_mutex_destroy(&queue->mutex);
 }

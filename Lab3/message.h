@@ -27,3 +27,5 @@ void message_queue_init(MessageQueue* queue);
 int message_queue_put(MessageQueue* queue, Message msg);
 
 int message_queue_take(MessageQueue* queue, Message* msg);
+
+void message_queue_destroy(MessageQueue* queue);

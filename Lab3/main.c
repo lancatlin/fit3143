@@ -13,7 +13,12 @@ int main(int argc, char* argv[]) {
     MPI_Comm comm2D;
     int dims[NDIMS] = {2, 4};
     int wrap_around[NDIMS] = {0, 0};
-    MPI_Init(&argc, &argv);
+    int provided;
+    MPI_Init_thread(&argc, &argv, MPI_THREAD_MULTIPLE, &provided);
+    if (provided < MPI_THREAD_MULTIPLE) {
+        fprintf(stderr, "MPI_THREAD_MULTIPLE is not supported\n");
+        MPI_Abort(MPI_COMM_WORLD, 1);
+    }
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
@@ -65,15 +70,16 @@ int main(int argc, char* argv[]) {
     }
 
     // TODO: simulate shutdown
-    sleep(20);
+    sleep(15);
     context_shutdown(&ctx);
 
     pthread_join(node.thread_id, NULL);
     pthread_join(recv_id, NULL);
     pthread_join(send_id, NULL);
 
-    MPI_Finalize();
     context_destroy(&ctx);
+    MPI_Comm_free(&comm2D);
+    MPI_Finalize();
 
     printf("Node %d: exited\n", node.id);
 

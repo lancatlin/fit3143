@@ -53,4 +53,5 @@ int context_wait(Context* ctx, int msec) {
 void context_destroy(Context* ctx) {
     pthread_mutex_destroy(&ctx->mutex);
     pthread_cond_destroy(&ctx->cond);
+    message_queue_destroy(&ctx->queue);
 }
