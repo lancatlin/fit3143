@@ -1,6 +1,8 @@
 #include "charging_node.h"
 #include "charging_port.h"
 #include "context.h"
+#include "message.h"
+#include "my_mpi.h"
 #include "random_generator.h"
 #include <pthread.h>
 #include <semaphore.h>
@@ -161,6 +163,16 @@ void* _generate_cars(void* args) {
         // put a new car
         // printf("Generator post a new car\n");
         int availability = available_ports(params->node);
+        Message msg;
+        msg.buffer[0] = availability;
+        msg.tag = TAG_NODE_AVAILABILITY;
+        for (int i = 0; i < NBR_COUNT; i++) {
+            msg.recipient = node->neighbors[i].rank;
+            if (msg.recipient >= 0) {
+                message_queue_put(&params->ctx->queue, msg);
+            }
+        }
+
         if (availability > AVAILABILITY_BASELINE) {
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);

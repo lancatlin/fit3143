@@ -1,4 +1,5 @@
 #include "context.h"
+#include "message.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -15,6 +16,7 @@ int context_init(Context* ctx) {
         return -1;
     }
     atomic_init(&ctx->stopped, NULL);
+    message_queue_init(&ctx->queue);
     return 0;
 }
 

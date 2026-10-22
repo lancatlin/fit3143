@@ -1,6 +1,8 @@
 #include "my_mpi.h"
 #include "charging_node.h"
 #include "context.h"
+#include "message.h"
+#include <assert.h>
 #include <pthread.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -109,16 +111,23 @@ void* _start_send_queue(void* args) {
     int count = 0;
     int buffer = 0;
     ChargingNode* node = params->node;
+    Message msg;
+    MessageQueue* queue = &params->ctx->queue;
     while (context_running(params->ctx)) {
-        int availability = available_ports(node);
-        if (buffer != availability) {
-            buffer = availability;
-            for (int i = 0; i < NBR_COUNT; i++) {
-                if (node->neighbors[i].rank >= 0) {
-                    MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,
-                             TAG_NODE_AVAILABILITY, *params->comm2D);
-                }
-            }
+        // int availability = available_ports(node);
+        if (queue->count > 0) {
+            int err = message_queue_take(queue, &msg);
+            assert(err == 0);
+            MPI_Send(&msg.buffer, PAYLOAD_SIZE, MPI_INT, msg.recipient, msg.tag,
+                     *params->comm2D);
+            printf("Node %d: Sent message id %d tag %d to %d: %d\n", node->id,
+                   msg.id, msg.tag, msg.recipient, msg.buffer[0]);
+            // for (int i = 0; i < NBR_COUNT; i++) {
+            //     if (node->neighbors[i].rank >= 0) {
+            //         MPI_Send(&buffer, 1, MPI_INT, node->neighbors[i].rank,
+            //                  TAG_NODE_AVAILABILITY, *params->comm2D);
+            //     }
+            // }
         }
         if (context_wait(params->ctx, STATUS_UPDATE_INTERVAL) == 0) {
             break;

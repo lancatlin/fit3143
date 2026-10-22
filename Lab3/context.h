@@ -1,5 +1,6 @@
 #pragma once
 
+#include "message.h"
 #include <pthread.h>
 #include <stdatomic.h>
 #include <stdbool.h>
@@ -17,6 +18,7 @@ typedef struct {
     pthread_mutex_t mutex;
     pthread_cond_t cond;
     atomic_bool stopped;
+    MessageQueue queue;
 } Context;
 
 /* initialise a Context */
