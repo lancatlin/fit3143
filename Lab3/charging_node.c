@@ -130,14 +130,14 @@ int available_ports(ChargingNode* node) {
     return sum;
 }
 
-int _max_neighbour(ChargingNode* node) {
-    int max_neighbour = -1;
+Neighbour* _max_neighbour(ChargingNode* node) {
+    Neighbour* max_neighbour = NULL;
     int max_availability = -1;
     for (int i = 0; i < NBR_COUNT; i++) {
-        Neighbour nbr = node->neighbors[i];
-        if (nbr.rank >= 0 && nbr.availability > max_availability) {
-            max_availability = nbr.availability;
-            max_neighbour = i;
+        Neighbour* nbr = &node->neighbors[i];
+        if (nbr->rank >= 0 && nbr->availability > max_availability) {
+            max_availability = nbr->availability;
+            max_neighbour = nbr;
         }
     }
     return max_neighbour;
@@ -167,12 +167,15 @@ void* _generate_cars(void* args) {
             // Let a port to take this car
             sem_post(params->new_car);
         } else {
-            int max_nbr = _max_neighbour(node);
+            Neighbour* nbr = _max_neighbour(node);
 
-            printf("Node %d is low availability %d: please go to Node %d "
-                   "(%d free)\n",
-                   node->id, availability, node->neighbors[max_nbr].rank,
-                   node->neighbors[max_nbr].availability);
+            if (nbr->availability <= AVAILABILITY_BASELINE) {
+                printf("Node %d: Congestion happened\n", node->id);
+            } else {
+                printf("Node %d is low availability %d: please go to Node %d "
+                       "(%d free)\n",
+                       node->id, availability, nbr->rank, nbr->availability);
+            }
         }
     }
 
