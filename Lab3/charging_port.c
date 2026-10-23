@@ -1,6 +1,7 @@
 #include "charging_port.h"
 #include "context.h"
 #include "random_generator.h"
+#include "time_helper.h"
 #include <pthread.h>
 #include <semaphore.h>
 #include <stdio.h>
@@ -8,7 +9,7 @@
 #include <time.h>
 #include <unistd.h>
 #define OCCUPIED_RATE 2
-#define POLL_TIMEOUT 1
+#define POLL_TIMEOUT 100
 
 ChargingPort create_charging_port(int id) {
     ChargingPort port = {id, 0, false};
@@ -21,28 +22,27 @@ void* _start_port(void* args) {
     RandomGenerator* generator = params->generator;
     sem_t* on_update = params->on_update;
     sem_t* new_car = params->new_car;
-    struct timespec ts;
     Context* ctx = params->ctx;
 
     while (context_running(ctx)) {
-        clock_gettime(CLOCK_REALTIME, &ts);
-        ts.tv_sec += POLL_TIMEOUT;
+        struct timespec ts;
+        ts = get_future(POLL_TIMEOUT);
         int result = sem_timedwait(new_car, &ts);
         if (result != 0) {
+            // No new car received, continue
             continue;
         }
-        // printf("Port %d got a new car\n", port->id);
         port->occupied = true;
         sem_post(on_update);
 
-        // wait for timeout
+        // wait for the car finish charging
         int interval = next_random_value(generator);
-        if (context_wait(params->ctx, interval * 1000) == 0) {
+        if (context_wait(params->ctx, interval) == 0) {
+            // Received shutdown signal
             break;
         }
 
         port->occupied = false;
-        // printf("Port %d released\n", port->id);
         sem_post(on_update);
     }
 

@@ -4,6 +4,7 @@
 #include "message.h"
 #include "mpi.h"
 #include "table.h"
+#include "time_helper.h"
 #include <assert.h>
 #include <pthread.h>
 #include <semaphore.h>
