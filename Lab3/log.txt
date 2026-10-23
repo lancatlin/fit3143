@@ -1,0 +1,68 @@
+0.54: Node 5 is Availabile: 8 Empty Spots.
+1.57: Node 1 is Availabile: 8 Empty Spots.
+1.63: Node 3 is Availabile: 8 Empty Spots.
+1.67: Node 7 is Availabile: 8 Empty Spots.
+1.84: Node 6 is Availabile: 8 Empty Spots.
+2.61: Node 6 is Availabile: 7 Empty Spots.
+2.76: Node 0 is Availabile: 8 Empty Spots.
+2.82: Node 2 is Availabile: 8 Empty Spots.
+2.84: Node 7 is Availabile: 7 Empty Spots.
+2.93: Node 4 is Availabile: 8 Empty Spots.
+3.45: Node 3 is Availabile: 7 Empty Spots.
+3.48: Node 5 is Availabile: 7 Empty Spots.
+3.69: Node 1 is Availabile: 7 Empty Spots.
+3.87: Node 7 is Availabile: 6 Empty Spots.
+4.15: Node 0 is Availabile: 7 Empty Spots.
+5.13: Node 6 is Availabile: 6 Empty Spots.
+5.14: Node 4 is Availabile: 7 Empty Spots.
+5.27: Node 2 is Availabile: 7 Empty Spots.
+5.59: Node 1 is Availabile: 6 Empty Spots.
+5.89: Node 7 is Availabile: 5 Empty Spots.
+5.95: Node 5 is Availabile: 6 Empty Spots.
+6.35: Node 3 is Availabile: 6 Empty Spots.
+6.40: Node 0 is Availabile: 6 Empty Spots.
+6.56: Node 6 is Availabile: 5 Empty Spots.
+7.10: Node 2 is Availabile: 6 Empty Spots.
+7.12: Node 3 is Availabile: 5 Empty Spots.
+7.45: Node 7 is Availabile: 4 Empty Spots.
+7.67: Node 0 is Availabile: 5 Empty Spots.
+7.67: Node 2 is Availabile: 5 Empty Spots.
+7.69: Node 4 is Availabile: 6 Empty Spots.
+8.47: Node 1 is Availabile: 5 Empty Spots.
+8.54: Node 5 is Availabile: 5 Empty Spots.
+8.78: Node 6 is Availabile: 4 Empty Spots.
+9.13: Node 5 is Availabile: 4 Empty Spots.
+9.17: Node 7 is Availabile: 3 Empty Spots.
+9.32: Node 3 is Availabile: 4 Empty Spots.
+9.38: Node 2 is Availabile: 4 Empty Spots.
+9.50: Node 0 is Availabile: 4 Empty Spots.
+9.70: Node 1 is Availabile: 4 Empty Spots.
+9.90: Node 7 is Availabile: 2 Empty Spots.
+10.08: Node 4 is Availabile: 5 Empty Spots.
+10.44: Node 2 is Availabile: 3 Empty Spots.
+10.45: Node 0 is Availabile: 3 Empty Spots.
+11.00: Node 2 is Availabile: 2 Empty Spots.
+11.02: Node 0 is Availabile: 2 Empty Spots.
+11.21: Node 6 is Availabile: 3 Empty Spots.
+11.42: Node 1 is Availabile: 3 Empty Spots.
+11.92: Node 0 is full; Nearest Neighbouring Node: 4.
+11.98: Node 1 is Availabile: 2 Empty Spots.
+12.09: Node 5 is Availabile: 3 Empty Spots.
+12.18: Node 3 is Availabile: 3 Empty Spots.
+12.21: Node 6 is Availabile: 2 Empty Spots.
+12.22: Node 2 is full; Nearest Neighbouring Node: 3.
+12.71: Node 7 is full; Nearest Neighbouring Node: 6.
+12.75: Node 4 is Availabile: 4 Empty Spots.
+13.13: Node 3 is Availabile: 2 Empty Spots.
+13.62: Node 1 is full; Nearest Neighbouring Node: 5.
+14.12: Node 5 is Availabile: 2 Empty Spots.
+14.39: Node 7 is full; Nearest Neighbouring Node: 3.
+14.41: Node 6 is full; Nearest Neighbouring Node: 5.
+14.55: Node 2 is full; Nearest Neighbouring Node: 3.
+14.56: Node 0 is full; Nearest Neighbouring Node: 4.
+14.68: Node 3 is full; Nearest available nodes(s): None.
+14.85: Node 1 is full; Nearest Neighbouring Node: 5.
+14.95: Node 4 is Availabile: 3 Empty Spots.
+Simulation time: 20.00 Seconds.
+Number of Alerts Detected: 1 Alerts.
+Total Number of Messages: 64 Messages.

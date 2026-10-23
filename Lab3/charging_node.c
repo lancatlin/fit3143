@@ -11,6 +11,12 @@
 #include <stdlib.h>
 #include <time.h>
 #include <unistd.h>
+#include <mpi.h>
+
+#define MPI_FULL_TAG 0
+#define MPI_UPDATE_TAG 1
+#define MPI_LOW_AVAIL_TAG 2
+#define MPI_BASE_STATION_RESPONSE_TAG 3
 
 ChargingNode create_charging_node(int id, int port_count) {
     ChargingPort* ports = malloc(sizeof(ChargingPort) * port_count);
@@ -172,6 +178,10 @@ void* _generate_cars(void* args) {
         params->node->id, 1000, 0.5 * SECOND, 3 * SECOND);
     ChargingNode* node = params->node;
 
+    int mpi_size;
+    MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
+    MPI_Request request;
+
     while (true) {
         int interval = next_random_value(&generator);
         if (context_wait(params->ctx, interval) == 0) {
@@ -182,17 +192,45 @@ void* _generate_cars(void* args) {
         // printf("Generator post a new car\n");
         int availability = available_ports(params->node);
         _request_neighbours(node, params->ctx);
+        Neighbour* nbr = _max_neighbour(node);
         if (availability > AVAILABILITY_BASELINE) {
+            // Update status to base station
+            int data[2] = {node->id, availability - 1};
+            MPI_Send(data, 2, MPI_INT, mpi_size-1, MPI_UPDATE_TAG, MPI_COMM_WORLD);
             printf("Node %d: accepted new car. available: %d\n", node->id,
                    availability - 1);
             // Let a port to take this car
             sem_post(params->new_car);
         } else {
-            Neighbour* nbr = _max_neighbour(node);
 
             if (nbr->availability <= AVAILABILITY_BASELINE) {
                 printf("Node %d: Congestion happened\n", node->id);
+                
+                // Inform base station that charging node and surrounding nodes are full
+                int data[2] = {node->id, -1};
+                MPI_Send(data, 2, MPI_INT, mpi_size-1, MPI_FULL_TAG, MPI_COMM_WORLD);
+                int response[8];  // eight is the max num of nodes exactly 2 steps away from any node
+                // MPI_Status rStatus;
+                // MPI_Recv(response, 8, MPI_INT, mpi_size-1, MPI_BASE_STATION_RESPONSE_TAG, MPI_COMM_WORLD, &rStatus);
+
+                // Convey infomation from base station to EVs
+                printf("Node %d: Here are some free nodes: ", node->id); 
+                bool has_answered = false;
+                for (int i = 0; i < 8 ; i++) {
+                    if (response[i] != -1) {
+                        printf("%d ", response[i]);
+                        has_answered = true;
+                     }
+                }
+                if (!has_answered) {
+                    printf("None");
+                }
+                printf("\n");
+
             } else {
+                // Inform base station that charging node has low availability
+                int data[2] = {node->id, nbr->rank};
+                MPI_Send(data, 2, MPI_INT, mpi_size-1, MPI_LOW_AVAIL_TAG, MPI_COMM_WORLD);
                 printf("Node %d is low availability %d: please go to Node %d "
                        "(%d free)\n",
                        node->id, availability, nbr->rank, nbr->availability);
