@@ -1,32 +1,19 @@
+#include "base_station.h"
+#include "message.h"
 #include <mpi.h>
+#include <pthread.h>
+#include <stdatomic.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <pthread.h>
-#include "context.h"
 #include <time.h>
-#include <stdatomic.h>
-
-#define MAX_THREADS 10
-#define MPI_FULL_TAG 0
-#define MPI_UPDATE_TAG 1
-#define MPI_LOW_AVAIL_TAG 2
-#define MPI_BASE_STATION_RESPONSE_TAG 3
 
 pthread_mutex_t availability_mutex = PTHREAD_MUTEX_INITIALIZER;
 pthread_mutex_t log_file_mutex = PTHREAD_MUTEX_INITIALIZER;
 
-typedef struct {
-    int num_of_nodes;
-    FILE *log_file;
-    int row_number;
-    int column_number;
-    bool is_node_available[];
-} BaseStation;
-
-
-BaseStation *create_base_station(int mpi_size, int dims_no, int* dims) {
-    BaseStation *baseStation = malloc(sizeof(BaseStation) + mpi_size * sizeof(bool));
+BaseStation* create_base_station(int mpi_size, int dims_no, int* dims) {
+    BaseStation* baseStation =
+        malloc(sizeof(BaseStation) + mpi_size * sizeof(bool));
     for (int i = 0; i < mpi_size; i++) {
         baseStation->is_node_available[i] = true;
     }
@@ -37,33 +24,20 @@ BaseStation *create_base_station(int mpi_size, int dims_no, int* dims) {
     return baseStation;
 }
 
-void free_base_station(BaseStation *baseStation) {
+void free_base_station(BaseStation* baseStation) {
     if (baseStation->log_file != NULL) {
         fclose(baseStation->log_file);
     }
     free(baseStation);
 }
 
-typedef struct {
-    int nodeRank;
-    int special_arguement;  // this value's meaning depends on the MPI tag it is sent with
-    double timeReceived;
-} NodeReport;
+void* respond_message(void* arg);
 
-typedef struct {
-    NodeReport *report;
-    BaseStation *baseStation;
-    int mpi_send_dest;
-    atomic_bool *has_ended;
-    int mpi_flag;
-} ThreadArgs;
-
-void *respond_message(void *arg);
-
-int run_base_station(BaseStation *baseStation) {
+int run_base_station(BaseStation* baseStation) {
     pthread_t threads[MAX_THREADS];
     bool is_thread_active[MAX_THREADS];
-    atomic_bool has_thread_ended[MAX_THREADS];      // atomic bool avoids race conditions among threads
+    atomic_bool has_thread_ended[MAX_THREADS]; // atomic bool avoids race
+                                               // conditions among threads
     NodeReport node_reports[MAX_THREADS];
     ThreadArgs thread_args[MAX_THREADS];
     for (int i = 0; i < MAX_THREADS; i++) {
@@ -80,15 +54,16 @@ int run_base_station(BaseStation *baseStation) {
     while ((time_elapsed <= 20)) {
         int flag = 0;
         MPI_Status status;
-        
+
         MPI_Iprobe(MPI_ANY_SOURCE, MPI_ANY_TAG, MPI_COMM_WORLD, &flag, &status);
-         // There is an incoming message and there is a free thread
-         if (flag == 1 && next_thread_id != -1) {
+        // There is an incoming message and there is a free thread
+        if (flag == 1 && next_thread_id != -1) {
             // receive message
             int message[2];
             MPI_Status rStatus;
-            MPI_Recv(message, 2, MPI_INT, status.MPI_SOURCE, status.MPI_TAG, MPI_COMM_WORLD, &rStatus);
-           
+            MPI_Recv(message, 2, MPI_INT, status.MPI_SOURCE, status.MPI_TAG,
+                     MPI_COMM_WORLD, &rStatus);
+
             // update counter
             if (status.MPI_TAG == MPI_FULL_TAG) {
                 alerts_num++;
@@ -97,28 +72,30 @@ int run_base_station(BaseStation *baseStation) {
             }
 
             // create thread
-            NodeReport *report = &node_reports[next_thread_id];
+            NodeReport* report = &node_reports[next_thread_id];
             report->nodeRank = message[0];
             report->special_arguement = message[1];
             current_time = clock();
-            report->timeReceived = (double)(current_time - start_time) / CLOCKS_PER_SEC;
-            ThreadArgs *args = &thread_args[next_thread_id];
+            report->timeReceived =
+                (double)(current_time - start_time) / CLOCKS_PER_SEC;
+            ThreadArgs* args = &thread_args[next_thread_id];
             args->report = report;
             args->baseStation = baseStation;
             args->mpi_send_dest = status.MPI_SOURCE;
             args->has_ended = &has_thread_ended[next_thread_id];
             args->mpi_flag = status.MPI_TAG;
 
-            int err_code = pthread_create(&threads[next_thread_id], NULL, &respond_message, args);
-            if (err_code == 0) { 
+            int err_code = pthread_create(&threads[next_thread_id], NULL,
+                                          &respond_message, args);
+            if (err_code == 0) {
                 is_thread_active[next_thread_id] = true;
-                next_thread_id = -1;    // flag id as used
+                next_thread_id = -1; // flag id as used
             }
-            
         }
         // check for any finished threads
         for (int i = 0; i < MAX_THREADS; i++) {
-            if (is_thread_active[i] && atomic_load(&has_thread_ended[i]) == true) {
+            if (is_thread_active[i] &&
+                atomic_load(&has_thread_ended[i]) == true) {
                 pthread_join(threads[i], NULL);
                 atomic_init(&has_thread_ended[i], false);
                 is_thread_active[i] = false;
@@ -138,7 +115,7 @@ int run_base_station(BaseStation *baseStation) {
     }
     // exit gracefully
     // Wait for all threads to finish
-    for (int i = 0; i < MAX_THREADS; i ++) {
+    for (int i = 0; i < MAX_THREADS; i++) {
         if (is_thread_active[i]) {
             pthread_join(threads[i], NULL);
         }
@@ -147,9 +124,12 @@ int run_base_station(BaseStation *baseStation) {
 
     // clean up base station
 
-    fprintf(baseStation->log_file, "Simulation time: %.2f Seconds.\n", time_elapsed);
-    fprintf(baseStation->log_file, "Number of Alerts Detected: %d Alerts.\n", alerts_num);
-    fprintf(baseStation->log_file, "Total Number of Messages: %d Messages.\n", events_num);
+    fprintf(baseStation->log_file, "Simulation time: %.2f Seconds.\n",
+            time_elapsed);
+    fprintf(baseStation->log_file, "Number of Alerts Detected: %d Alerts.\n",
+            alerts_num);
+    fprintf(baseStation->log_file, "Total Number of Messages: %d Messages.\n",
+            events_num);
     free_base_station(baseStation);
     return 0;
 }
@@ -157,15 +137,15 @@ int run_base_station(BaseStation *baseStation) {
 void _get_neighbour(int curr, int row_number, int column_number, int res[4]) {
     // rank of right neighbour
     if ((curr + 1) % column_number == 0) {
-        res[0] = -1;   // right neighbour is none
+        res[0] = -1; // right neighbour is none
     } else {
         res[0] = curr + 1;
     }
     // rank of left neighbour
     if ((curr % column_number) == 0) {
-        res[1] = -1;     // left neighbour is none
+        res[1] = -1; // left neighbour is none
     } else {
-        res[1] = curr - 1; 
+        res[1] = curr - 1;
     }
     // rank of neighbour above
     if (curr - column_number < 0) {
@@ -179,36 +159,35 @@ void _get_neighbour(int curr, int row_number, int column_number, int res[4]) {
     } else {
         res[3] = curr + column_number;
     }
-
 }
 
-void *respond_message(void *arg) {
-    ThreadArgs *a = (ThreadArgs *) arg;
+void* respond_message(void* arg) {
+    ThreadArgs* a = (ThreadArgs*)arg;
     NodeReport report = *(a->report);
     int mpi_dest = a->mpi_send_dest;
-    BaseStation *baseStation = a->baseStation;
+    BaseStation* baseStation = a->baseStation;
 
     // Charging node reporting that it and its neighbours are all full
     if (a->mpi_flag == MPI_FULL_TAG) {
         // find nearest available nodes
         pthread_mutex_lock(&availability_mutex);
-        bool *is_node_available = baseStation->is_node_available;
+        bool* is_node_available = baseStation->is_node_available;
         int row_no = baseStation->row_number;
-        int column_no =  baseStation->column_number;
+        int column_no = baseStation->column_number;
         int neigh[4];
         _get_neighbour(report.nodeRank, row_no, column_no, neigh);
         is_node_available[report.nodeRank] = false;
         for (int i = 0; i < 4; i++) {
-            if (neigh[i] != -1) {   // check for valid neighbours
+            if (neigh[i] != -1) { // check for valid neighbours
                 is_node_available[neigh[i]] = false;
             }
         }
-        // a max of 8 nodes are exactly 2 steps away from current node, 
-        // given that current node and all its immediate neighbours are full 
-        int nearest_available_nodes[8] = {-1, -1, -1, -1, -1, -1, -1, -1};  
-        int node_counter = 0; 
+        // a max of 8 nodes are exactly 2 steps away from current node,
+        // given that current node and all its immediate neighbours are full
+        int nearest_available_nodes[8] = {-1, -1, -1, -1, -1, -1, -1, -1};
+        int node_counter = 0;
         for (int i = 0; i < 4; i++) {
-            if (neigh[i] != -1) {   // check for valid neighbours
+            if (neigh[i] != -1) { // check for valid neighbours
                 int neigh2[4];
                 _get_neighbour(neigh[i], row_no, column_no, neigh2);
                 for (int i = 0; i < 4; i++) {
@@ -221,12 +200,12 @@ void *respond_message(void *arg) {
             }
         }
         pthread_mutex_unlock(&availability_mutex);
-        
+
         // formatting log string
-        char log_str[150];          // string buffer size
-        snprintf(log_str, sizeof(log_str), 
-            "%.2f: Node %d is full; Nearest available nodes(s): ", 
-            report.timeReceived, report.nodeRank);
+        char log_str[150]; // string buffer size
+        snprintf(log_str, sizeof(log_str),
+                 "%.2f: Node %d is full; Nearest available nodes(s): ",
+                 report.timeReceived, report.nodeRank);
         if (node_counter == 0) {
             strcat(log_str, "None.\n");
         } else {
@@ -235,12 +214,14 @@ void *respond_message(void *arg) {
                 char tmp[10];
                 if (nearest_available_nodes[i] != -1) {
                     if (first_term) {
-                        snprintf(tmp, sizeof(tmp), "%d", nearest_available_nodes[i]);
+                        snprintf(tmp, sizeof(tmp), "%d",
+                                 nearest_available_nodes[i]);
                         strcat(log_str, tmp);
                         first_term = false;
                         continue;
                     }
-                    snprintf(tmp, sizeof(tmp), ", %d", nearest_available_nodes[i]);
+                    snprintf(tmp, sizeof(tmp), ", %d",
+                             nearest_available_nodes[i]);
                     strcat(log_str, tmp);
                 }
             }
@@ -248,37 +229,38 @@ void *respond_message(void *arg) {
         }
 
         // writing log entry into file
-        FILE *f = baseStation->log_file;
+        FILE* f = baseStation->log_file;
         if (f != NULL) {
             // ensure only one entry is added at a time
             pthread_mutex_lock(&log_file_mutex);
             fprintf(f, "%s", log_str);
             pthread_mutex_unlock(&log_file_mutex);
         }
-        
-        // send response of all available charging nodes, 8 is the maximum possible 
-        // charging nodes at a distance of exactly 2 from any node.
-        MPI_Send(nearest_available_nodes, 8, MPI_INT, mpi_dest, 0, MPI_COMM_WORLD);
+
+        // send response of all available charging nodes, 8 is the maximum
+        // possible charging nodes at a distance of exactly 2 from any node.
+        MPI_Send(nearest_available_nodes, 8, MPI_INT, mpi_dest, 0,
+                 MPI_COMM_WORLD);
         atomic_store(a->has_ended, true);
         return NULL;
-        }
-        
+    }
 
-    // changing station status update message 
-    else if ( a->mpi_flag == MPI_UPDATE_TAG ) {
+    // changing station status update message
+    else if (a->mpi_flag == MPI_UPDATE_TAG) {
         // update current database
         pthread_mutex_lock(&availability_mutex);
         baseStation->is_node_available[report.nodeRank] = true;
         pthread_mutex_unlock(&availability_mutex);
 
         // formatting log string
-        char log_str[150];          // string buffer size
-        snprintf(log_str, sizeof(log_str), 
-            "%.2f: Node %d is Availabile: %d Empty Spots.\n", 
-            report.timeReceived, report.nodeRank, report.special_arguement); 
- 
+        char log_str[150]; // string buffer size
+        snprintf(log_str, sizeof(log_str),
+                 "%.2f: Node %d is Availabile: %d Empty Spots.\n",
+                 report.timeReceived, report.nodeRank,
+                 report.special_arguement);
+
         // writing log entry into file
-        FILE *f = baseStation->log_file;
+        FILE* f = baseStation->log_file;
         if (f != NULL) {
             // ensure only one entry is added at a time
             pthread_mutex_lock(&log_file_mutex);
@@ -289,22 +271,22 @@ void *respond_message(void *arg) {
         atomic_store(a->has_ended, true);
         return NULL;
 
-
-    // charging station is full but some neighbouring nodes aren't
-    }  else if ( a->mpi_flag == MPI_LOW_AVAIL_TAG) {
+        // charging station is full but some neighbouring nodes aren't
+    } else if (a->mpi_flag == MPI_LOW_AVAIL_TAG) {
         // update current database
         pthread_mutex_lock(&availability_mutex);
         baseStation->is_node_available[report.nodeRank] = false;
         pthread_mutex_unlock(&availability_mutex);
 
         // formatting log string
-        char log_str[150];          // string buffer size
-        snprintf(log_str, sizeof(log_str), 
-            "%.2f: Node %d is full; Nearest Neighbouring Node: %d.\n", 
-            report.timeReceived, report.nodeRank, report.special_arguement); 
- 
+        char log_str[150]; // string buffer size
+        snprintf(log_str, sizeof(log_str),
+                 "%.2f: Node %d is full; Nearest Neighbouring Node: %d.\n",
+                 report.timeReceived, report.nodeRank,
+                 report.special_arguement);
+
         // writing log entry into file
-        FILE *f = baseStation->log_file;
+        FILE* f = baseStation->log_file;
         if (f != NULL) {
             // ensure only one entry is added at a time
             pthread_mutex_lock(&log_file_mutex);

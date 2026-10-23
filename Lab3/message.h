@@ -8,6 +8,10 @@
 /* Different tags to indicate message purpose */
 #define TAG_NODE_AVAILABILITY_REQUEST 1
 #define TAG_NODE_AVAILABILITY_RESPONSE 2
+#define MPI_FULL_TAG 3
+#define MPI_UPDATE_TAG 4
+#define MPI_LOW_AVAIL_TAG 5
+#define MPI_BASE_STATION_RESPONSE_TAG 6
 
 typedef struct {
     int id;

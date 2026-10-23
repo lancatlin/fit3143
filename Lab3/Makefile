@@ -14,10 +14,10 @@ run: all
 run-test: test
 	./test
 
-main: main.o charging_node.o charging_port.o random_generator.o my_mpi.o context.o message.o table.o time_helper.o
+main: main.o charging_node.o charging_port.o random_generator.o my_mpi.o context.o message.o table.o time_helper.o base_station.o
 	$(CC) $^ -o $@ $(LIBS)
 
-test: test.o charging_node.o charging_port.o random_generator.o my_mpi.o context.o message.o table.o time_helper.o
+test: test.o charging_node.o charging_port.o random_generator.o my_mpi.o context.o message.o table.o time_helper.o base_station.o
 	$(CC) $^ -o $@ $(LIBS)
 
 %.o: %.c

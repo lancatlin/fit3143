@@ -1,3 +1,4 @@
+#include "base_station.h"
 #include "charging_node.h"
 #include "context.h"
 #include "my_mpi.h"
@@ -6,7 +7,6 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
-#include "base_station.c"
 
 #define BASE_STATION_COLOUR 0
 #define NODE_COLOUR 1
@@ -30,7 +30,8 @@ int main(int argc, char* argv[]) {
     MPI_Comm_rank(MPI_COMM_WORLD, &mpi_rank);
     MPI_Comm_size(MPI_COMM_WORLD, &mpi_size);
 
-    MPI_Comm_split(MPI_COMM_WORLD, mpi_rank < NO_ROWS * NO_COLUMNS, mpi_rank, &NODES_COMM);
+    MPI_Comm_split(MPI_COMM_WORLD, mpi_rank < NO_ROWS * NO_COLUMNS, mpi_rank,
+                   &NODES_COMM);
 
     if (mpi_rank < NO_ROWS * NO_COLUMNS) {
         // if (mpi_size != 8) {
@@ -41,13 +42,13 @@ int main(int argc, char* argv[]) {
 
         MPI_Dims_create(mpi_size - 1, NDIMS, dims);
         if (mpi_rank == 0) {
-            printf("PW[%d]/[%d]: PEdims = [%d x %d]\n", mpi_rank, mpi_size, dims[0],
-                dims[1]);
+            printf("PW[%d]/[%d]: PEdims = [%d x %d]\n", mpi_rank, mpi_size,
+                   dims[0], dims[1]);
         }
 
         int reorder = 1;
         int ierr = MPI_Cart_create(NODES_COMM, NDIMS, dims, wrap_around,
-                                reorder, &comm2D);
+                                   reorder, &comm2D);
         if (ierr != 0) {
             perror("Failed to create cartesion");
         }
@@ -72,7 +73,8 @@ int main(int argc, char* argv[]) {
         send_params->ctx = &ctx;
         pthread_t send_id = start_send_queue(send_params);
 
-        RunNodeParams* node_params = (RunNodeParams*)malloc(sizeof(RunNodeParams));
+        RunNodeParams* node_params =
+            (RunNodeParams*)malloc(sizeof(RunNodeParams));
         node_params->node = &node;
         node_params->ctx = &ctx;
         int result = run_node(node_params);
@@ -98,7 +100,7 @@ int main(int argc, char* argv[]) {
         return 0;
     } else {
         // base station
-        BaseStation *baseStation = create_base_station(mpi_size, NDIMS, dims);
+        BaseStation* baseStation = create_base_station(mpi_size, NDIMS, dims);
 
         run_base_station(baseStation);
         MPI_Comm_free(&NODES_COMM);
