@@ -190,7 +190,7 @@ void* _generate_cars(void* args) {
         int availability = available_ports(params->node);
         // _request_neighbours(node, params->ctx);
         Neighbour* nbr = _max_neighbour(node);
-        if (availability > AVAILABILITY_BASELINE) {
+        if (availability > 0) {
             // Update status to base station
             int data[2] = {node->id, availability - 1};
             MPI_Send(data, 2, MPI_INT, mpi_size - 1, MPI_UPDATE_TAG,

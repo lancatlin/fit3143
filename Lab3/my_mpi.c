@@ -42,8 +42,8 @@ void _update_neighbour_availability(ChargingNode* node, int source,
     for (int i = 0; i < NBR_COUNT; i++) {
         if (node->neighbors[i].rank == source) {
             node->neighbors[i].availability = buffer[0];
-            // printf("Node %d: Updated from %d: %d\n", node->id, source,
-            //        buffer);
+            printf("Node %d: Updated from %d: %d\n", node->id, source,
+                   buffer[0]);
             break;
         }
     }
